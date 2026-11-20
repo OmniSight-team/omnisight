@@ -24,8 +24,12 @@ admitted frame matches a row of `vectors.npz` and every row a frame (the frames 
 CPU encoder instead). A frame or clip that already has a point of the pinned model is left
 alone, so adding the same video twice changes nothing.
 
-`--from DIR` reads another folder than Drive's. Exits non-zero if any video chosen was not
-added in full.
+`--ready <path>` reads another ready folder, e.g. your own Drive's (default
+`G:/My Drive/omnisight/ready`); it works with listing and adding alike:
+
+    uv run python scripts/add_from_drive.py --ready "H:/My Drive/omnisight/ready" all
+
+`-h` / `--help` prints this. Exits non-zero if any video chosen was not added in full.
 """
 
 import json
@@ -135,9 +139,14 @@ def add(folder: Path) -> dict:
 
 
 def main(argv: list[str]) -> int:
+    if "-h" in argv or "--help" in argv:
+        print(__doc__)
+        return 0
     root = READY
-    if "--from" in argv:
-        i = argv.index("--from")
+    if "--ready" in argv:
+        i = argv.index("--ready")
+        if i + 1 >= len(argv):
+            sys.exit("--ready needs a path, e.g. --ready \"G:/My Drive/omnisight/ready\"")
         root, argv = Path(argv[i + 1]), argv[:i] + argv[i + 2:]
     if not root.is_dir():
         sys.exit(f"{root} not found: is Google Drive for desktop running?")
