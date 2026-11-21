@@ -1,10 +1,11 @@
 # CLAUDE.md — OmniSight Phase B
 
 Capstone project 26-2-D-17 (Braude College), Ahmad Tawil. Phase A (the design book) is
-finished and graded; this repo is Phase B, the implementation. Teammate Cyrine Fahoum is
-not active right now, so Ahmad works alone.
+finished and graded; this repo is Phase B, the implementation. **Teammate Cyrine Fahoum works
+on it with Ahmad from 21 Nov 2026.** Either of them may be the one talking to you: the rules
+below apply to both.
 
-## How to talk to Ahmad
+## How to talk to Ahmad and Cyrine
 
 - Short, clear, direct. No long explanations unless he asks.
 - Give **one recommendation**, not a menu of options.
@@ -12,19 +13,22 @@ not active right now, so Ahmad works alone.
 - If something he asked for conflicts with Phase A or a requirement, say so in one or two
   sentences **before** building it.
 - **One branch per slice** (e.g. `slice-05-camera-wall`), created at the start of the
-  sprint and merged into `master` at the end. No PRs or reviews while Cyrine is inactive;
-  he will say when she rejoins.
+  sprint and merged into `master` at the end.
+- **Working together:** each of them works on their own branch per task (e.g.
+  `cyrine-dashboard`), pushes it and opens a pull request; Ahmad reviews and merges into
+  `master`. They do not work on the same page or file at the same time. Before starting,
+  check which branch you are on and that it is up to date with `master`.
 
-## Git: Ahmad runs every git command
+## Git: Ahmad and Cyrine run every git command
 
 - **Never run a git command that changes the repository**: no `commit`, `add`, `branch`,
-  `switch`/`checkout`, `merge`, `push`, `pull`, `rebase`, `reset`, `stash`, `tag`. Ahmad does
-  all of them himself. Read-only commands (`status`, `diff`, `log`) are fine.
-- When a ticket is done, **suggest one short commit message** for him to use, in the repo's
+  `switch`/`checkout`, `merge`, `push`, `pull`, `rebase`, `reset`, `stash`, `tag`. Whoever
+  you are working with does them themselves. Read-only commands (`status`, `diff`, `log`) are fine.
+- When a ticket is done, **suggest one short commit message** for them to use, in the repo's
   style: a `feat:`, `fix:` or `docs:` prefix and a plain sentence saying what changed.
   **No ticket number** in the message. Example:
   `feat: gate every live frame and publish only admitted frames`
-- When a ticket says to create a branch, commit or merge, tell him the exact command to
+- When a ticket says to create a branch, commit or merge, tell them the exact command to
   run; do not run it.
 
 ## Phase A is the spec
@@ -115,7 +119,8 @@ Docker Compose, one machine: `postgres`, `query` (FastAPI API, auth, Alembic mig
 from the queue), `rabbitmq` (durable queue, ack after commit), `mediamtx` (RTSP simulator,
 ten looping feeds), `frontend` (Next.js; has its own `frontend/CLAUDE.md`), `nginx` (TLS,
 serves `/thumbs/` and `/media/` straight from the volumes). Shared code is `services/common`.
-Later slices fill `services/ai_workers` and `services/pfm`.
+`ai-workers` loads the models (SigLIP 2, InternVideo2's text side, YOLO-World) and is the only
+service that does. `services/pfm` (forecasting) is filled by later slices.
 
 ```
 docker compose up -d                          # whole stack; open https://localhost
@@ -126,6 +131,42 @@ uv add <pkg> --package omnisight-query        # dependency for one service only
 ```
 
 Media and playback only work through nginx at `https://localhost`, not the dev server on 3000.
+
+**A fresh clone** (e.g. Cyrine's laptop) needs, once, after `cp .env.example .env` and
+`bash scripts/generate-dev-cert.sh` (Git Bash):
+
+```
+docker compose up -d --build
+docker compose exec -w /workspace/services/query query uv run --package omnisight-query alembic upgrade head
+uv run python scripts/seed_admin.py
+```
+
+Without the migration, sign-in fails with a 500 (no tables).
+
+## Adding videos (the current way, OMNI-X05)
+
+The laptop has no GPU, so a normal upload gets scene vectors only, slowly on the CPU (about
+9 s a frame), and no action vectors (D-32). To make a video fully searchable, do it the VIRAT
+way, through Colab and Drive:
+
+1. **Colab:** open `notebooks/encode_upload_gpu.ipynb` (GPU runtime), pick videos from a Drive
+   folder or upload them, run all cells. It runs the same gate and both encoders and saves one
+   folder per video to `My Drive/omnisight/ready/{fingerprint}/`: the video file,
+   `vectors.npz` and `info.json`. About 0.4 s per kept frame on an L4.
+2. **Laptop**, stack running, after Drive syncs:
+   ```
+   uv run python scripts/add_from_drive.py              # list ready videos (new / already in)
+   uv run python scripts/add_from_drive.py 1 3          # add the ones picked, or: all
+   uv run python scripts/add_from_drive.py --ready "<path>"   # another Drive (e.g. Cyrine's)
+   ```
+   It copies the video in, extracts its frames with the same gate, and imports both vectors
+   by frame index.
+
+A video is recognised by the SHA-256 of its file (D-47), so a renamed file still matches and
+nothing is ever added twice. Each person uses their own Google Drive (Google Drive for
+desktop must be installed). Docker cannot see the `G:` drive, which is why this is a host
+script and not a button. On a GPU machine (OMNI-X04, not built yet) an upload will make both
+vectors by itself, with no Colab.
 
 ## Datasets
 
