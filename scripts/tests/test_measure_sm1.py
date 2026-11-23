@@ -357,3 +357,19 @@ def test_the_committed_set_is_what_a_run_reads():
     queries = sm1.read_queries()
     assert len(queries) == 50
     assert len(sm1.file_sha256(sm1.QUERIES)) == 64
+
+
+def test_another_clip_encoders_weights_and_depth_reach_fused_only(world):
+    # OMNI-X14: weights chosen for another clip encoder. All on the clip list: fused is the clip list.
+    archive, dataset = world
+    loaded = sm1.load_archive([A, B], archive, dataset, {q["answer_rule"] for q in BOTH_KINDS}, pins=PINS)
+    frame, clip = _unit(1, 0, dim=FRAME_DIM), _unit(1, 0, dim=CLIP_DIM)
+    texts = {q["text"]: frame for q in BOTH_KINDS}, {q["text"]: clip for q in BOTH_KINDS}
+    default = sm1.measure(BOTH_KINDS, loaded, Stand(texts[0]), Stand(texts[1]), _classifier(50.0))["queries"][0]["modes"]
+    to_clip = sm1.measure(
+        BOTH_KINDS, loaded, Stand(texts[0]), Stand(texts[1]), _classifier(50.0), weights=lambda w: (0.0, 1.0), depth=8
+    )["queries"][0]["modes"]
+    assert [h["frame_index"] for h in to_clip["fused"]["hits"]] == [h["frame_index"] for h in to_clip["clip"]["hits"]]
+    assert {m: to_clip[m] for m in ("frame", "clip", "fused_classifier", "fused_equal")} == {
+        m: default[m] for m in ("frame", "clip", "fused_classifier", "fused_equal")
+    }

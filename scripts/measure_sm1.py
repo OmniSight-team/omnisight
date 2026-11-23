@@ -142,10 +142,10 @@ def chance_at_5(correct: np.ndarray) -> float:
     return float(1 - (1 - correct.mean()) ** K)
 
 
-def _exact_top(vectors: np.ndarray, query: np.ndarray) -> tuple[list[int], np.ndarray]:
+def _exact_top(vectors: np.ndarray, query: np.ndarray, n: int = K) -> tuple[list[int], np.ndarray]:
     """Every vector compared, best first; equal scores by row, so a rerun gives the same list."""
     scores = vectors @ query
-    return [int(row) for row in np.argsort(-scores, kind="stable")[:K]], scores
+    return [int(row) for row in np.argsort(-scores, kind="stable")[:n]], scores
 
 
 def _scored(archive: Archive, rule: str, rows: list[int], scores: list[float]) -> dict:
@@ -165,12 +165,18 @@ def _scored(archive: Archive, rule: str, rows: list[int], scores: list[float]) -
     return {"found": first is not None, "found_near": bool(near[rows].any()) if rows else False, "first_correct_rank": first, "hits": hits}
 
 
-def measure_query(query: dict, frame_text: np.ndarray, clip_text: np.ndarray, archive: Archive, classifier: ModalityClassifier) -> dict:
+def measure_query(
+    query: dict, frame_text: np.ndarray, clip_text: np.ndarray, archive: Archive, classifier: ModalityClassifier,
+    weights=tuned_weights, depth: int = K,
+) -> dict:
+    """`weights` and `depth` are `fused`'s: the product's (D-40) unless another clip encoder's
+    were chosen on the tuning set (OMNI-X14). The other modes use top-K lists as before."""
     rule = query["answer_rule"]
-    frame_rows, frame_scores = _exact_top(archive.frame_vectors, frame_text)
-    clip_rows, clip_scores = _exact_top(archive.clip_vectors, clip_text)
+    frame_deep, frame_scores = _exact_top(archive.frame_vectors, frame_text, max(depth, K))
+    clip_deep, clip_scores = _exact_top(archive.clip_vectors, clip_text, max(depth, K))
+    frame_rows, clip_rows = frame_deep[:K], clip_deep[:K]
     w_f, w_c = classifier.weights(frame_text.tolist())
-    fused = fuse(frame_rows, clip_rows, *tuned_weights(w_f), K)
+    fused = fuse(frame_deep[:depth], clip_deep[:depth], *weights(w_f), K)
     as_written = fuse(frame_rows, clip_rows, w_f, w_c, K)
     equal = fuse(frame_rows, clip_rows, 0.5, 0.5, K)
     return {
@@ -214,11 +220,17 @@ def summarise(rows: list[dict]) -> dict:
     }
 
 
-def measure(queries: list[dict], archive: Archive, frame_encoder, clip_encoder, classifier: ModalityClassifier) -> dict:
+def measure(
+    queries: list[dict], archive: Archive, frame_encoder, clip_encoder, classifier: ModalityClassifier,
+    weights=tuned_weights, depth: int = K,
+) -> dict:
     """Every query, in every mode. `measured_at` and the run's conditions go in beside it."""
     texts = [query["text"] for query in queries]
     frame_text, clip_text = frame_encoder.encode_texts(texts), clip_encoder.encode_texts(texts)
-    rows = [measure_query(q, f, c, archive, classifier) for q, f, c in zip(queries, frame_text, clip_text, strict=True)]
+    rows = [
+        measure_query(q, f, c, archive, classifier, weights, depth)
+        for q, f, c in zip(queries, frame_text, clip_text, strict=True)
+    ]
     return {
         **summarise(rows),
         "measured_at": datetime.now(UTC).isoformat(timespec="seconds"),

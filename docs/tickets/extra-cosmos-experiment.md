@@ -15,9 +15,10 @@ yet, so this is the cheapest moment to check.
 60% fused against 60% frame only, no lift (K-30), and in a 2026 independent benchmark
 InternVideo2 and SigLIP 2 ranked last. Cosmos-Embed1-336p (NVIDIA, about 1B parameters, 8
 frames at 336 px, 768-D, a text encoder included, NVIDIA Open Model License) reports
-Kinetics-400 87.7 against InternVideo2's 62.8 on its model card. It is the same size class as
-InternVideo2's video side, and it keeps Algorithm 2's shape: one clip of 8 frames per kept
-frame.
+Kinetics-400 87.7 against 62.8 on its model card, but that 62.8 is **InternVideo2-1B**, not
+ours. Ours is **InternVideo2_CLIP_S, a small model**, so Cosmos is **much bigger** than what we
+run today: slower per clip on a GPU and heavier in memory. That is a real cost, measured below.
+It keeps Algorithm 2's shape: one clip of 8 frames per kept frame.
 
 **Only the clip stream changes.** SigLIP 2 stays (scene queries 92%; the query classifier and
 Cyrine's box fix depend on it).
@@ -29,7 +30,8 @@ other models.
 
 ## The rule, written before running
 
-**Switch to Cosmos-Embed1 if, on SM-1's 50 queries:**
+**Switch to Cosmos-Embed1 if, on SM-1's 50 queries, with the better of the two spacings
+(A or B):**
 
 1. **fused recall@5 on the 25 action queries is above frame only's** (the lift SM-1 asks for,
    which InternVideo2 never gave), **and**
@@ -37,6 +39,11 @@ other models.
 
 Otherwise keep InternVideo2 (D-33), and OMNI-902 starts with it. Either way the numbers go in
 `results.md`.
+
+**If B (4 s) is the one that wins,** the clip window changes from Algorithm 2's 1 s to 4 s: a
+deviation from Phase A, recorded in the same decision. Changing it is allowed (CLAUDE.md, "How
+strict to be"). The bigger size is not a reason to refuse on its own: its GPU time is recorded
+and decided together with the quality.
 
 ---
 
@@ -48,19 +55,25 @@ Otherwise keep InternVideo2 (D-33), and OMNI-902 starts with it. Either way the 
       (`encode_virat_archive.py`): the **same 275 videos and the same 35,704 kept frames**
       (frame index and clip window read from the existing archive, never re-gated), so only the
       encoder differs
-- [ ] For each kept frame, its clip as today (the window `[t − 2Δ, t]`, 8 evenly spaced
-      frames), encoded with **Cosmos-Embed1-336p** at a pinned revision (BF16, as its card
-      says). Unit vectors, 768-D
+- [ ] For each kept frame, encode its clip with **Cosmos-Embed1-336p** at a pinned revision
+      (BF16, as its card says), unit vectors, 768-D, **in two spacings**:
+  - **A · as Algorithm 2 writes it:** 8 evenly spaced frames from the 1 s before `t`
+    (`[t − 2Δ, t]`), the same clip InternVideo2 got
+  - **B · as Cosmos was trained:** 8 evenly spaced frames from the **4 s** before `t`. Cosmos
+    is tuned for 8 frames spread over 4–8 s, so A may make it look worse than it is
+- [ ] Both cached separately on Drive; InternVideo2 stays at 1 s (its existing numbers)
 - [ ] Cached to Drive (`embeddings/virat_cosmos/`), resumable like the archive
-- [ ] Time per clip on the GPU, recorded
+- [ ] Time per clip on the GPU, recorded for Cosmos and, from the existing archive, for
+      InternVideo2_CLIP_S, side by side (how many cameras one L4 could keep up with)
 
 ### SM-1 and the weights
 
 - [ ] **Re-tune the fusion weights for Cosmos** with `scripts/tune_fusion.py` on the **tuning
       queries only** (`datasets/eval/sm1_dev_queries.csv`), exactly as D-40 did for
       InternVideo2. Never on SM-1's queries
-- [ ] Run `scripts/measure_sm1.py` with Cosmos's clip vectors and text vectors: frame only,
-      clip only, fused. Recall@5 overall, scene, action, and chance
+- [ ] Run `scripts/measure_sm1.py` with Cosmos's clip vectors and text vectors, **for A and for
+      B**: frame only, clip only, fused. Recall@5 overall, scene, action, and chance (weights
+      tuned for each spacing on the tuning queries)
 - [ ] **Side by side** in `results.md`: InternVideo2 (the existing numbers) and Cosmos-Embed1
 
 ### Will it run in the product?
@@ -71,7 +84,8 @@ Otherwise keep InternVideo2 (D-33), and OMNI-902 starts with it. Either way the 
 
 ### Decide
 
-- [ ] Apply the rule above. Record the decision (**D-50**): switch or keep, with the numbers.
+- [ ] Apply the rule above. Record the decision (**D-50**): switch or keep, which spacing, the
+      GPU time per clip, and the numbers.
       If switching, it replaces D-33 for the clip stream. (D-49 is OMNI-901's UCA margin; the
       sprint's later decisions start at D-51.)
 - [ ] Tell Ahmad the result in two lines before OMNI-902 starts
@@ -84,7 +98,8 @@ Otherwise keep InternVideo2 (D-33), and OMNI-902 starts with it. Either way the 
       the GPU path, OMNI-X04); the pinned id and revision in `CommonSettings`
 - [ ] Qdrant: `clip_vectors` becomes 768-D; the 9 VIRAT product videos and any video added
       from Drive get their Cosmos clip vectors (the existing import, from the new archive)
-- [ ] The Colab upload path (`encode_uploads.py`, OMNI-X05) uses Cosmos for the clip stream
+- [ ] The Colab upload path (`encode_uploads.py`, OMNI-X05) uses Cosmos for the clip stream,
+      with the winning spacing (the 1 s or 4 s window)
 - [ ] The tuned weights from OMNI-X14 in the product's fusion
 - [ ] **TC-4** run again on the new vectors; SM-1, TC-4 and the tracker updated
 - [ ] `uv run pytest` passes; a search on the product shows Cosmos's action results
