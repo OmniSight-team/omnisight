@@ -51,44 +51,44 @@ and decided together with the quality.
 
 ### On Colab (GPU)
 
-- [ ] A notebook `notebooks/cosmos_sm1_gpu.ipynb`, reusing the VIRAT archive's code
+- [x] A notebook `notebooks/cosmos_sm1_gpu.ipynb`, reusing the VIRAT archive's code
       (`encode_virat_archive.py`): the **same 275 videos and the same 35,704 kept frames**
       (frame index and clip window read from the existing archive, never re-gated), so only the
       encoder differs
-- [ ] For each kept frame, encode its clip with **Cosmos-Embed1-336p** at a pinned revision
+- [x] For each kept frame, encode its clip with **Cosmos-Embed1-336p** at a pinned revision
       (BF16, as its card says), unit vectors, 768-D, **in two spacings**:
   - **A · as Algorithm 2 writes it:** 8 evenly spaced frames from the 1 s before `t`
     (`[t − 2Δ, t]`), the same clip InternVideo2 got
   - **B · as Cosmos was trained:** 8 evenly spaced frames from the **4 s** before `t`. Cosmos
     is tuned for 8 frames spread over 4–8 s, so A may make it look worse than it is
-- [ ] Both cached separately on Drive; InternVideo2 stays at 1 s (its existing numbers)
-- [ ] Cached to Drive (`embeddings/virat_cosmos/`), resumable like the archive
-- [ ] Time per clip on the GPU, recorded for Cosmos and, from the existing archive, for
+- [x] Both cached separately on Drive; InternVideo2 stays at 1 s (its existing numbers)
+- [x] Cached to Drive (`embeddings/virat_cosmos/`), resumable like the archive
+- [x] Time per clip on the GPU, recorded for Cosmos and, from the existing archive, for
       InternVideo2_CLIP_S, side by side (how many cameras one L4 could keep up with)
 
 ### SM-1 and the weights
 
-- [ ] **Re-tune the fusion weights for Cosmos** with `scripts/tune_fusion.py` on the **tuning
+- [x] **Re-tune the fusion weights for Cosmos** with `scripts/tune_fusion.py` on the **tuning
       queries only** (`datasets/eval/sm1_dev_queries.csv`), exactly as D-40 did for
       InternVideo2. Never on SM-1's queries
-- [ ] Run `scripts/measure_sm1.py` with Cosmos's clip vectors and text vectors, **for A and for
+- [x] Run `scripts/measure_sm1.py` with Cosmos's clip vectors and text vectors, **for A and for
       B**: frame only, clip only, fused. Recall@5 overall, scene, action, and chance (weights
       tuned for each spacing on the tuning queries)
-- [ ] **Side by side** in `results.md`: InternVideo2 (the existing numbers) and Cosmos-Embed1
+- [x] **Side by side** in `results.md`: InternVideo2 (the existing numbers) and Cosmos-Embed1
 
 ### Will it run in the product?
 
 - [ ] Cosmos-Embed1's **text side** on this laptop's CPU, beside SigLIP 2 in `ai_workers`:
       memory used and time per query. It must fit Docker's memory with the rest of the stack
-- [ ] Its loading needs `trust_remote_code=True`: pin the revision and note it
+- [x] Its loading needs `trust_remote_code=True`: pin the revision and note it
 
 ### Decide
 
-- [ ] Apply the rule above. Record the decision (**D-50**): switch or keep, which spacing, the
+- [x] Apply the rule above. Record the decision (**D-50**): switch or keep, which spacing, the
       GPU time per clip, and the numbers.
       If switching, it replaces D-33 for the clip stream. (D-49 is OMNI-901's UCA margin; the
       sprint's later decisions start at D-51.)
-- [ ] Tell Ahmad the result in two lines before OMNI-902 starts
+- [x] Tell Ahmad the result in two lines before OMNI-902 starts
 
 ---
 

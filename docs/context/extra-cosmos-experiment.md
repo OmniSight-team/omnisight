@@ -68,8 +68,25 @@ action queries (K-30), should be replaced.
   on the frame side are made exactly as in SM-1's run, times InternVideo2 on the same 64 clips, and reads Cosmos's
   text vectors from the file (`StoredTexts`, which refuses a text it was not given). A new test covers the hand-over
 
+- **2026-11-23, part 3: the run.** Ahmad's run on an A100, both spacings, each about 2 hours of encoding
+  (`sm1_result_cosmos.json` on Drive). Both spacings' tuning chose D-40's own setting (depth 5, `w_f` action 0.6,
+  scene 0.5). On SM-1: fused 74.0% for A and B, 60.0% on actions, the same as frame only. The rule says keep (D-50)
+- Looked further than the rule, per query, against `sm1_result_tuned.json`: Cosmos's clip alone finds 9 queries
+  InternVideo2's misses, and 4 action queries frame search misses (`a04`, `a05` closing a trunk, `a16` waving,
+  `a25` exiting a building). Fused keeps none: the depth-5 fusion follows the frame ranks on actions. It also loses
+  `s25`, the scene query InternVideo2's clip added, which is the whole gap from 76 to 74
+- GPU time came out the other way from the size: Cosmos BF16 177 ms (A) and 166 ms (B) per clip, InternVideo2
+  float32 186 ms, the same 64 clips
+
 ### Not verified
 
-- Nothing has run on the GPU yet. Whether Cosmos's own code loads with the repo's transformers 5.20.1 (its config
-  was saved with 4.51.3) is the first thing the notebook shows
-- The laptop CPU check of the text side, not started
+- An L4: timed on an A100 only
+- Cosmos's text side on the laptop's CPU (the ticket's "Will it run in the product?"): skipped, as Cosmos is not
+  adopted
+- Whether a different fusion would keep Cosmos's four action finds: not tried, SM-1's queries cannot choose it
+
+### Result
+
+**Keep InternVideo2 (D-50).** Cosmos A: fused 74.0% overall (InternVideo2 76.0%), 60.0% on actions, no lift over frame
+only. Its clip stream alone is better on actions (44% against 32%) and no slower, but the current fusion does not use
+it. OMNI-X15 is not done; OMNI-902 starts on InternVideo2.

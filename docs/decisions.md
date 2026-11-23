@@ -53,6 +53,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-45 | The upload limit is raised from 500 MB to 2,048 MB, for the demo set; the 900 s extraction timeout stays | 2026-11-08 | Done |
 | D-47 | A video is known by its fingerprint (SHA-256 of the file); Colab's ready folders are added by a host script, not a mount | 2026-11-20 | Done |
 | D-49 | UCA-timed UCF-Crime windows end 8 s before the UCA time (K-20); the windows are rebuilt once for it. Revises D-24 | 2026-11-23 | Done |
+| D-50 | The clip encoder stays InternVideo2_CLIP_S (D-33): Cosmos-Embed1-336p tested on SM-1 (OMNI-X14) and did not meet the rule written before the run | 2026-11-23 | Done |
 | D-51 | The alerts inbox: three severity levels, "unread" is "not reviewed yet", a review is final, and only operators and analysts review or assign | 2026-11-23 | Done |
 | D-52 | The rule detector: Algorithm 1 records which cells moved (recorded, not decided on); a run of motion, one alert per run; each rule's own pause; severities; settings on the camera | 2026-11-23 | Done |
 
@@ -1226,6 +1227,31 @@ the Drive copy. For each clip the checker writes the second where the act visibl
 tolerance) before the window's end. D-27's "ends too early" no longer applies: the window ends 8 s early on purpose.
 Also reported, to compare with OMNI-609's 10 of 15: whether the UCA time itself is within 1.5 s of the act.
 `scripts/uca_recheck.py report` computes both.
+
+## D-50 · The clip encoder stays InternVideo2: Cosmos-Embed1 tested and not adopted · 2026-11-23
+
+**Why it was tested:** InternVideo2 gives no lift on action queries (K-30), and OMNI-902 is about to train the PFM on
+clip vectors, after which changing the encoder means encoding every training window again.
+
+**The rule, written before the run** (`docs/tickets/extra-cosmos-experiment.md`): switch if, with the better of two
+spacings (A: 8 frames over 1 s, Algorithm 2's window; B: over 4 s, as Cosmos was trained), fused recall@5 on the 25
+action queries is above frame only's **and** fused overall is at least 76.0%. Weights re-chosen for Cosmos on the
+tuning queries only.
+
+**Result (results.md, OMNI-X14):** A was the better spacing. Fused 74.0% overall, 60.0% on actions, frame only 60.0%:
+**neither condition met. Keep InternVideo2.** OMNI-X15 (the switch) is not done; OMNI-902 trains on InternVideo2's
+clip vectors; Algorithm 2's 1 s window stays.
+
+**What is worth keeping from it:**
+- Cosmos's clip stream alone is better than InternVideo2's (54% against 46% overall, 44% against 32% on actions) and
+  finds four action queries frame search misses, two of them closing a trunk. The fusion (D-40: depth 5, frame ranks
+  weighted 0.6) throws them away. A better fusion, chosen on new queries, is where an action lift could come from
+- It is not slower: 177 ms per clip in BF16 against InternVideo2's 186 ms in float32, the same 64 clips on an A100
+- B (4 s) is worse than A on VIRAT's short events
+
+**How Cosmos had to run:** its code needs transformers 4.51.3 and fails on the repo's 5.20.1 (a removed helper, then
+transformers 5's weight setup). Patching transformers was dropped; Cosmos ran in a process of its own, with 4.51.3
+installed beside the notebook's. A switch would have needed the same in `ai_workers`.
 
 ## D-51 · The alerts inbox: severity, unread, one review, who may review · 2026-11-23
 

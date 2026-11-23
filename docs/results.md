@@ -53,6 +53,7 @@ are in `known-issues.md`; how the work went is in `context/`.
 | FR-4, search over all footage (D-43) | One query returns moments from several videos and the datasets; the source and camera filters work inside the search | Unscoped on the page: one query's 16 hits from 2 VIRAT videos, the same query with Cameras ticked from camera 2446; `source` equals a direct count in both collections (camera 21, upload 20, dataset 1,039 frame points; dataset 1,039 clip points); two cameras with vectors: 2446 ranks first unfiltered, filtered to 2452 all 30 hits are 2452 and 2446 never appears (2 queries, frame and fused) | **Pass** | 2026-11-06 | OMNI-X03 |
 | TC-4 (D-37: VIRAT archive, 35,704 frames, not 100,000) | Both collections loaded; plain-language search; fused recall@5 at least 85% and every query under 3 s | 35,704 frames of 275 videos in both scratch collections, 50 SM-1 queries, 3 rounds, the product's own search code, no Postgres join: fused recall@5 **74%** (scene 92%, action 56%); frame 72%, clip 50%. Search + fusion max 0.20 s; slowest query **10.9 s**, the first one, a cold text encoder (K-26) | **Measured** (D-41): 74% against Phase A's 85%, which no published result supports (K-30); latency met except that one cold query (preliminary: one machine, one run; 100,000 not verified, D-37) | 2026-11-01 | OMNI-715 |
 | SM-1 | The correct clip in the top 5 for at least 85% of queries, with a lift on action queries over a frame-only baseline | After D-40: fused 76.0% overall (frame only 74.0%, clip only 46.0%, B.3 as written 60.0%). Action queries: fused 60.0%, frame only 60.0%, no lift. Scene queries: fused 92.0%, frame only 88.0%. Chance 25.1% | **Measured** (D-41): 85% and the lift on actions not met; no published result supports them (preliminary: 50 queries by one author) | 2026-10-31 | OMNI-713, D-40 |
+| SM-1 with Cosmos-Embed1 as the clip encoder (OMNI-X14, D-50; exploration) | Switch if fused beats frame only on action queries **and** fused overall is at least InternVideo2's 76.0% (rule written before the run) | Better spacing A (1 s): fused 74.0% overall, scene 88.0%, action 60.0% (frame only 60.0%: no lift). Clip only 54.0% (InternVideo2 46.0%), on actions 44.0% (InternVideo2 32.0%). B (4 s): fused 74.0%, clip only 46.0%, on actions 28.0%. GPU per clip, A100, the same 64 clips: InternVideo2 186 ms (float32), Cosmos A 177 ms, B 166 ms (BF16) | **Keep InternVideo2** (neither condition met; preliminary: 50 queries by one author) | 2026-11-23 | OMNI-X14 |
 | Boxes on search results (addition, D-42; no Phase A target) | Labelled boxes on the right thing; record how many are right, wrong or missing | 4 queries in VIRAT video 3230, top 5 each, by eye: *a blue car* 5 of 5 on the blue pickup (top box each time) and 10 more on other parked cars; *a person walking* 5 of 5; *a white truck* none in the footage, 15 boxes all on real vehicles; *a person opening a trunk* the person at the truck boxed in 1 of 4 frames (3 missed). 0 boxes on a non-vehicle or non-person. On screen: thumbnails, the paused player (video 3231) and the live viewer (camera 2446) | **Measured** (preliminary: one look, one person, no ground truth, one video) | 2026-11-05 | OMNI-X02 |
 | YOLO-World cost on this laptop's CPU (D-42; no Phase A target) | ms per frame and for 5 frames; ai_workers still fits Docker's 7.6 GiB | 1 frame: median 397 ms (290-570, 20 calls); 5 frames: median 2.64 s (1.60-3.62, 20 calls); the first box request after a start 11.2 s, then 2.9-4.2 s. ai_workers 2.31 GiB idle after start, 3.44 GiB after the run | **Fits** (preliminary: one run, the embed queue idle) | 2026-11-05 | OMNI-X02 |
 | FR-9, dashboard aggregates (no Phase A target) | The summary's counts equal a direct count; both endpoints measured with the archive at full size | Equal to a direct count before and after an upload, a re-gate and a delete on the real pipeline. 146,807 rows (D-26's archive): summary p50 41 ms, p95 72 ms; activity p50 15 ms, p95 36 ms, 100 calls each | **Pass** (preliminary: two runs, one machine; storage misses 1.05 GB of orphan files, K-21) | 2026-10-11 | OMNI-610 |
@@ -2519,3 +2520,61 @@ kept UCA row ends exactly 8 s before its old end and carries the flag (716 of 71
 redraws byte for byte.
 
 **Not covered:** whether the margin is right on footage not yet checked: the re-check below.
+
+## OMNI-X14 · SM-1 with Cosmos-Embed1 as the clip encoder · 2026-11-23
+
+**Conditions:** Colab, NVIDIA A100-SXM4-40GB, torch 2.14.1, commit `e1ffe4e`, `notebooks/cosmos_sm1_gpu.ipynb`, one
+run. Cosmos-Embed1-336p at revision `0e8a28f7`, BF16, in a process of its own on transformers 4.51.3 (D-50); SigLIP 2
+and InternVideo2 in the notebook's process on 5.20.1, as SM-1's run. The same 275 videos and 35,704 kept frames as
+OMNI-708's archive (read from it, never re-gated); SigLIP 2's frame vectors copied unchanged, so only the clip vectors
+differ. Exact search. The same query files as OMNI-713 (SHA-256 equal). Weights chosen per spacing on the tuning
+queries only (`tune_fusion.grid`, as D-40). Output: Drive `omnisight/results/sm1_result_cosmos.json`, not committed.
+
+**Tuning set (exploration: these numbers chose the weights).** Both spacings chose what D-40 chose for InternVideo2:
+depth 5, `w_f` action 0.6, scene 0.5.
+
+| Recall@5, tuning set | All | Action | Scene |
+|---|---:|---:|---:|
+| Frame only | 66% | 56% | 76% |
+| InternVideo2 clip only (D-40) | 40% | 16% | 64% |
+| Cosmos A clip only | 52% | 36% | 68% |
+| Cosmos B clip only | 40% | 16% | 64% |
+| InternVideo2 fused, chosen (D-40) | 74% | 56% | 92% |
+| Cosmos A or B fused, chosen | 72% | 56% | 88% |
+
+**SM-1's 50 queries:**
+
+| Recall@5 | Frame only | Clip only | **Fused** | Fused 0.5 / 0.5 | Chance |
+|---|---:|---:|---:|---:|---:|
+| InternVideo2, all (OMNI-713) | 74.0% | 46.0% | **76.0%** | 68.0% | 25.1% |
+| Cosmos A (1 s), all | 74.0% | 54.0% | **74.0%** | 70.0% | 25.1% |
+| Cosmos B (4 s), all | 74.0% | 46.0% | **74.0%** | 70.0% | 25.1% |
+| InternVideo2, action (25) | 60.0% | 32.0% | **60.0%** | 44.0% | 11.7% |
+| Cosmos A, action | 60.0% | 44.0% | **60.0%** | 52.0% | 11.7% |
+| Cosmos B, action | 60.0% | 28.0% | **60.0%** | 52.0% | 11.7% |
+| InternVideo2, scene (25) | 88.0% | 60.0% | **92.0%** | 92.0% | 38.5% |
+| Cosmos A, scene | 88.0% | 64.0% | **88.0%** | 88.0% | 38.5% |
+| Cosmos B, scene | 88.0% | 64.0% | **88.0%** | 88.0% | 38.5% |
+
+The better spacing, by the order fixed before the run (higher fused overall, then fused on actions, then A): **A**,
+a tie on both. Within 2 s, A fused 78.0% overall (InternVideo2 80.0%), 68.0% on actions (68.0%).
+
+**The rule: keep InternVideo2.** No lift on actions (fused 60.0% = frame only 60.0%, both spacings), and fused overall
+74.0% is under 76.0%.
+
+**What it shows:**
+- Cosmos's clip stream on its own is better than InternVideo2's: 54% against 46% overall, 44% against 32% on actions
+  (9 queries found by Cosmos's clip and not InternVideo2's, 5 the other way). Four of them are action queries frame
+  search misses: `a04` and `a05` (closing a trunk, the pair K-30 names), `a16` (waving), `a25` (exiting a building)
+- Fused keeps none of the four: at depth 5 with `w_f` 0.6, the frame ranks decide. Fused on actions is frame only, as
+  with InternVideo2 (D-40). And fused loses `s25`, the one scene query InternVideo2's clip added: hence 74 against 76
+- B (4 s, as Cosmos was trained) is worse than A on VIRAT: clip only on actions 28% against 44%. Spreading 8 frames
+  over 4 s does not help short events
+- GPU time, the same 64 clips of `VIRAT_S_000001`, batches of 16, preparation included: InternVideo2_CLIP_S 186 ms
+  (float32), Cosmos A 177 ms, B 166 ms (BF16). From 1.27 kept frames per camera-second (the archive's), one A100
+  keeps up with the clip stream of 4.2 cameras (InternVideo2), 4.5 (A) or 4.7 (B). The size is not the cost it
+  looked like, in BF16. The whole run: A 4,325 GPU s over 35,704 clips (121 ms each), B 4,364 s
+
+**Not covered:** an L4 (the ticket's GPU): the timing is on an A100, two precisions side by side; Cosmos's text side
+on this laptop's CPU (not needed once kept); a fusion that keeps Cosmos's four action finds (finding one would mean
+choosing on SM-1's queries, now used three times). 50 queries by one author.
