@@ -57,6 +57,22 @@ class GateDecision:
     # either way (a heartbeat admission does not fake or discard the score the
     # gate actually computed).
     admission_reason: str | None = None
+    # Which of lines 4-5's G x G cells moved (mean > τ), as a bitmask: bit r*G + c is
+    # cell (row r, column c), row 0 at the top (OMNI-908, D-52). Recorded, never used to
+    # decide: the rule detector reads it to tell whether the motion was inside a zone.
+    # None when the frame was not scored (warm-up) or the grid has more than 64 cells.
+    motion_cells: int | None = None
+    motion_grid: int | None = None
+
+
+def cells_mask(active) -> int | None:
+    """A G x G boolean array as a signed 64-bit bitmask (Postgres BIGINT), bit r*G + c.
+    None above 64 cells."""
+    flat = np.asarray(active, bool).ravel()
+    if flat.size > 64:
+        return None
+    mask = sum(1 << i for i in np.flatnonzero(flat).tolist())
+    return mask - (1 << 64) if mask >= 1 << 63 else mask
 
 
 def _clip_window(timestamp_s: float, stride_s: float) -> tuple[float, float]:
@@ -94,6 +110,9 @@ class SegmentRecord:
     # The bytes of the frame and thumbnail JPEGs written for this frame; 0 when none
     # were (OMNI-610: the dashboard's storage figure sums this instead of walking the disk).
     file_bytes: int = 0
+    # The gate's moved cells and its grid (OMNI-908, `GateDecision`).
+    motion_cells: int | None = None
+    motion_grid: int | None = None
 
 
 class FrameGate:
@@ -229,8 +248,10 @@ class MotionGate(FrameGate):
         earlier = min(self._buffer, key=lambda item: abs(item[0] - target))[1]
         diff = cv2.absdiff(processed, earlier)
 
-        # Lines 4-5.
-        active_cells = int(np.count_nonzero(_cell_means(diff, self._grid_size) > self._cell_threshold))
+        # Lines 4-5. Which cells moved is kept as well as how many (OMNI-908).
+        moved = _cell_means(diff, self._grid_size) > self._cell_threshold
+        active_cells = int(np.count_nonzero(moved))
+        cells = {"motion_cells": cells_mask(moved), "motion_grid": self._grid_size}
 
         # Line 6.
         admitted = active_cells >= self._min_active_cells
@@ -254,8 +275,9 @@ class MotionGate(FrameGate):
                 clip_start_s=clip_start_s,
                 clip_end_s=clip_end_s,
                 admission_reason="motion",
+                **cells,
             )
-        return GateDecision(motion_score=float(active_cells), admitted=False)
+        return GateDecision(motion_score=float(active_cells), admitted=False, **cells)
 
 
 class HeartbeatGate(FrameGate):
@@ -314,6 +336,8 @@ class HeartbeatGate(FrameGate):
             clip_start_s=clip_start_s,
             clip_end_s=clip_end_s,
             admission_reason="heartbeat",
+            motion_cells=decision.motion_cells,
+            motion_grid=decision.motion_grid,
         )
 
 
@@ -370,6 +394,8 @@ def process_frame(
         clip_end_s=decision.clip_end_s,
         admission_reason=decision.admission_reason,
         file_bytes=file_bytes,
+        motion_cells=decision.motion_cells,
+        motion_grid=decision.motion_grid,
     )
 
 

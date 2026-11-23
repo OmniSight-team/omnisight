@@ -56,6 +56,10 @@ class SegmentMessage(BaseModel):
     # Bytes of the frame and thumbnail JPEGs ingestion wrote for this frame, 0 when it
     # wrote none (OMNI-610). Defaults to 0 so a message queued before it existed parses.
     file_bytes: int = 0
+    # Which of Algorithm 1's G x G cells moved, as a bitmask (bit r*G + c), and G
+    # (OMNI-908, D-52). None on an unscored frame and on a message queued before them.
+    motion_cells: int | None = None
+    motion_grid: int | None = None
     # Which extraction of the video produced this frame. Lets the consumer
     # recognise a message left over from an extraction that has since failed or
     # been replaced, and drop it instead of writing an old run's frame into a

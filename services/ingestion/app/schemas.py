@@ -60,6 +60,9 @@ class ExtractedSegment(BaseModel):
     admission_reason: AdmissionReason | None = None
     # Bytes of the frame and thumbnail JPEGs written (OMNI-610); 0 when none were.
     file_bytes: int = 0
+    # Which of the gate's cells moved, and its grid (OMNI-908).
+    motion_cells: int | None = None
+    motion_grid: int | None = None
 
 
 class FileExtractResponse(BaseModel):

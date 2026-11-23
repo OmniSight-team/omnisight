@@ -29,6 +29,7 @@ one is fixed, move it to the bottom with the date and the result that shows it.
 | K-30 | SM-1 fails: after D-40 fused is 76.0% against 85%, with no lift on action queries (60.0%, frame only 60.0%). The clip list adds nothing on actions | SM-1, TC-4's pass, the Definition of done, the clip vectors slice 10 trains on | OMNI-713 | Ahmad and the supervisor, before slice 9 pins anything on the clip encoder |
 | K-32 | 7 of the 9 VIRAT videos on the stack have no playback copy: they are MPEG-4 Part 2, which Chrome does not play, so the player stays grey and a search result cannot be watched | FR-4 on the screen (jump to that second), the demo | OMNI-X02 | Before the demo: make the missing playback copies |
 | K-33 (fixed 2026-11-06) | Going back from the player to the Search page showed an empty page: the query, filters and results were not kept. Fixed: the search is kept in the page's URL and runs again on coming back; the player shows *← Search results* when opened from a result. Seen in Chrome: same query, filter and 16 results after the round trip | FR-4 on the screen (D-43) | OMNI-X03 | Ahmad asked for it the same day |
+| K-34 | After restarting several services at once, nginx sent `/api` to **ingestion**: it resolves `query`'s address once, at its own start, and the restarted containers took each other's addresses | Every API call through nginx, until nginx is restarted | OMNI-908 | Any time; until then, restart nginx after restarting `query` |
 
 ---
 
@@ -172,6 +173,17 @@ closing-trunk event (89.5-119.9 s); Action's top 5 (27, 2, 1, 16, 17 s) are outs
 open at 87 and 89 s and closed by 91 s: the closing is at about 89-91 s, a car about 200 px wide in the top right of 1920 x 1080. The
 annotation's box stays on the parked car for the whole 30 s, so 108-111 s is inside the label but shows nothing happening. SM-1's answer
 rule (a frame inside the event) is therefore generous for this type.**
+
+## K-34 · nginx keeps `query`'s old address after a restart
+
+2026-11-23, OMNI-908: after `docker compose restart ingestion consumer consumer-live query`, every call to
+`https://localhost/api/...` answered from ingestion (`/api/openapi.json` listed `/extract/file`, `/workers`...;
+`POST /api/auth/login` 404), while `http://localhost:8000/auth/login` (query's own port) answered 401 as it should.
+nginx's `proxy_pass http://query:8000` resolves the name once, when nginx starts; the restarted containers got new
+addresses and ingestion took query's old one. `docker compose restart nginx` fixed it at once. OMNI-907's single
+restart of `query` did not show it (it kept its address).
+**Fix candidates:** Docker's resolver in nginx (`resolver 127.0.0.11 valid=10s;` and the upstream in a variable,
+so the name is looked up again); or restart nginx whenever `query` or `frontend` is restarted.
 
 ## K-32 · Most VIRAT videos cannot be played in the browser
 

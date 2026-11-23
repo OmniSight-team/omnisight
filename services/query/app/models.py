@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 
 from omnisight_common import (
     AdmissionReason,
@@ -23,7 +23,9 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    SmallInteger,
     String,
+    Time,
     UniqueConstraint,
     false,
     func,
@@ -81,6 +83,29 @@ class Camera(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    # The rule detector's settings (OMNI-908, D-52). The zone: a rectangle in fractions of
+    # the frame, (0, 0) the top left; the whole frame by default.
+    zone_left: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, server_default="0")
+    zone_top: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, server_default="0")
+    zone_right: Mapped[float] = mapped_column(Float, nullable=False, default=1.0, server_default="1")
+    zone_bottom: Mapped[float] = mapped_column(Float, nullable=False, default=1.0, server_default="1")
+    # N: seconds of motion in the zone, in a row, that raise "sustained motion in zone".
+    sustained_motion_s: Mapped[float] = mapped_column(Float, nullable=False, default=10.0, server_default="10")
+    # The camera's watched hours, local time (`RULES_TIMEZONE`): motion outside them raises
+    # "activity outside hours". Both NULL: no hours set, that rule is off for the camera.
+    # `active_from` after `active_until` is a span over midnight (22:00-06:00).
+    active_from: Mapped[time | None] = mapped_column(Time)
+    active_until: Mapped[time | None] = mapped_column(Time)
+
+    __table_args__ = (
+        CheckConstraint(
+            "0 <= zone_left AND zone_left < zone_right AND zone_right <= 1 "
+            "AND 0 <= zone_top AND zone_top < zone_bottom AND zone_bottom <= 1",
+            name="ck_cameras_zone_inside_frame",
+        ),
+        CheckConstraint("sustained_motion_s > 0", name="ck_cameras_sustained_motion_positive"),
+        CheckConstraint("(active_from IS NULL) = (active_until IS NULL)", name="ck_cameras_hours_both_or_neither"),
     )
 
 
@@ -220,6 +245,11 @@ class Segment(Base):
     # The bytes of the frame and thumbnail JPEGs this frame wrote (OMNI-610); 0 when it
     # wrote none. Measured by ingestion, which wrote them, so storage is a sum, not a disk walk.
     file_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    # Which of Algorithm 1's G x G cells moved (mean > τ), bit r*G + c, row 0 at the top,
+    # and G (OMNI-908, D-52). Recorded by the gate, not used by it; the rule detector reads
+    # it for its zone. NULL on a frame that was not scored, and on rows from before it.
+    motion_cells: Mapped[int | None] = mapped_column(BigInteger)
+    motion_grid: Mapped[int | None] = mapped_column(SmallInteger)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

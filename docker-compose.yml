@@ -82,6 +82,25 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # OMNI-908: the PFM service. In slice 9 it runs the rule detector over the cameras' stored
+  # frames and writes `alerts` rows; slice 10 adds the trained model. No port published, like
+  # ingestion: nothing outside the Docker network reaches it.
+  pfm:
+    build:
+      context: .
+      dockerfile: services/pfm/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+    volumes:
+      - ./services/common:/workspace/services/common
+      - ./services/pfm:/workspace/services/pfm
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # OMNI-311: the durable queue between ingestion (publishes a gated frame) and
   # the consumer below (stores it, then acknowledges it). Credentials from
   # `.env`; config in infra/rabbitmq/. AMQP and the management UI are published

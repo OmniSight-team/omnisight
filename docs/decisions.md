@@ -54,6 +54,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-47 | A video is known by its fingerprint (SHA-256 of the file); Colab's ready folders are added by a host script, not a mount | 2026-11-20 | Done |
 | D-49 | UCA-timed UCF-Crime windows end 8 s before the UCA time (K-20); the windows are rebuilt once for it. Revises D-24 | 2026-11-23 | Done |
 | D-51 | The alerts inbox: three severity levels, "unread" is "not reviewed yet", a review is final, and only operators and analysts review or assign | 2026-11-23 | Done |
+| D-52 | The rule detector: Algorithm 1 records which cells moved (recorded, not decided on); a run of motion, one alert per run; each rule's own pause; severities; settings on the camera | 2026-11-23 | Done |
 
 ---
 
@@ -1250,3 +1251,38 @@ D-50 is OMNI-X14's (the Cosmos experiment, not decided yet).
 not deleted, as with segments; `segment_id` is set to NULL if its frame is pruned, so the decision stays.
 "Soonest expected" sorts by the moment the event is expected, `raised_at + expected_in_s`, not by the bare
 `expected_in_s`, which is only true at the moment the alert was raised.
+
+## D-52 · The rule detector: what it reads, what a run is, one alert per run · 2026-11-23
+
+**Why:** OMNI-908, slice 9's stand-in for the model: the plan's two "deliberately simple" rules, sustained motion
+in a zone and activity outside configured hours, raising alerts into D-51's inbox.
+
+**What Algorithm 1 now records (an addition, not a change):** lines 4-5 compute the mean of each of the G x G cells
+and count those above τ; the count was kept (`motion_score`), the cells were not. The gate now also returns which
+cells moved, `motion_cells` (a bitmask, bit r*G + c, row 0 at the top, a signed BIGINT) and `motion_grid` (G), carried
+through the queue to `segments`. No line of the pseudocode changes and no decision depends on it: the score, the
+admission and the clip window are what they were (the gate's tests pass unchanged). Above 64 cells no mask is kept.
+
+**What a frame counts as:** only frames from a camera (no video), and only those the gate admitted **for motion**; a
+heartbeat is not motion. "In the zone": at least one moved cell whose centre lies inside the camera's rectangle.
+
+**A run, and one alert per run:** the frames that count, in time order, with no pause between neighbours longer than
+the rule's own pause.
+- **Sustained motion in zone:** pause 2 s ("in a row"); fires at the frame where the run reaches N seconds
+- **Activity outside hours:** pause **60 s**. The first version used 2 s for both and raised 11 alerts in 40 s on the
+  simulator's `cam08`, whose motion comes in 1-1.5 s bursts 7-15 s apart: one person moving about is one stretch of
+  activity, not one alert per burst. Fires at the run's first frame
+- A run already has its alert when an alert of the same rule on the same camera points at a frame inside the run.
+  The detector keeps no state between looks: it reads the last 2 minutes and follows a run that reaches the window's
+  start back to its real start, so neither a restart nor a long run raises a second alert
+
+**Severity (D-51's levels), a fixed table:** sustained motion `medium`, activity outside hours `high` (activity when
+nobody should be there).
+
+**Settings, on the camera** (`PATCH /cameras/{id}`, admin, as every camera setting): the zone (fractions of the frame,
+the whole frame by default), N (`sustained_motion_s`, 10 s by default) and the watched hours (none by default, which
+turns that rule off; a start after the end spans midnight). Local time is `RULES_TIMEZONE`, Asia/Jerusalem. No zone
+drawing on screen in this sprint (the ticket). In `pfm`: look every 2 s, read back 2 minutes, the two pauses.
+
+**Where it runs:** `services/pfm`, its package named `pfm` (not `app`, so its tests share one run with the other
+services'), no host port. It writes `alerts` rows with raw SQL against the tables `query`'s migrations own.

@@ -2,7 +2,15 @@
 name = "omnisight-pfm"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["omnisight-common"]
+dependencies = [
+    "fastapi>=0.141.1",
+    "omnisight-common",
+    "psycopg[binary]>=3.3.5",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy>=2.0.52",
+    "tzdata>=2026.3",
+    "uvicorn[standard]>=0.52.4",
+]
 
 [tool.uv]
 package = false

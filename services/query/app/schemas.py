@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Literal
 
 from omnisight_common import (
@@ -9,7 +9,7 @@ from omnisight_common import (
     VideoSource,
     VideoStatus,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 
 class LoginRequest(BaseModel):
@@ -37,6 +37,44 @@ class CameraCreate(BaseModel):
     domain: Domain
 
 
+class Zone(BaseModel):
+    """The rule detector's zone (OMNI-908): a rectangle in fractions of the frame,
+    (0, 0) the top left, (1, 1) the bottom right."""
+
+    left: float = Field(ge=0, le=1)
+    top: float = Field(ge=0, le=1)
+    right: float = Field(ge=0, le=1)
+    bottom: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def has_area(self):
+        if not (self.left < self.right and self.top < self.bottom):
+            raise ValueError("a zone needs left < right and top < bottom")
+        return self
+
+
+class ActiveHours(BaseModel):
+    """The hours a camera is watched as normal, local time; `start` after `end` spans midnight."""
+
+    start: time
+    end: time
+
+    @model_validator(mode="after")
+    def not_empty(self):
+        if self.start == self.end:
+            raise ValueError("active hours need a start and an end that differ")
+        return self
+
+
+class CameraRules(BaseModel):
+    """The rule detector's settings for one camera (OMNI-908, D-52). `active_hours` None: no hours
+    set, so "activity outside hours" is off for this camera."""
+
+    zone: Zone
+    sustained_motion_s: float
+    active_hours: ActiveHours | None
+
+
 class CameraUpdate(BaseModel):
     name: str | None = None
     rtsp_url: str | None = None
@@ -44,6 +82,10 @@ class CameraUpdate(BaseModel):
     group: str | None = None
     domain: Domain | None = None
     status: CameraStatus | None = None
+    # OMNI-908. Sending `active_hours: null` clears the hours.
+    zone: Zone | None = None
+    sustained_motion_s: float | None = Field(None, gt=0, le=3600)
+    active_hours: ActiveHours | None = None
 
 
 class CameraCreateResponse(BaseModel):
@@ -59,6 +101,7 @@ class CameraOut(BaseModel):
     domain: Domain
     status: CameraStatus
     last_seen_at: datetime | None
+    rules: CameraRules
 
 
 class CameraTestResponse(BaseModel):

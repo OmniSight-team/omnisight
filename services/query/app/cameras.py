@@ -19,17 +19,20 @@ from app.ingestion_client import stop_worker as ingestion_stop_worker
 from app.live_state import derive_state, newest_frame_at
 from app.models import Camera, CameraStats, Segment, User, Video
 from app.schemas import (
+    ActiveHours,
     CameraBufferFrameOut,
     CameraCreate,
     CameraCreateResponse,
     CameraFrameOut,
     CameraLiveOut,
     CameraOut,
+    CameraRules,
     CameraStartResponse,
     CameraStatsOut,
     CameraStopResponse,
     CameraTestResponse,
     CameraUpdate,
+    Zone,
 )
 from app.settings import settings
 from app.videos import _thumb_url
@@ -71,6 +74,14 @@ def _to_out(camera: Camera) -> CameraOut:
         domain=camera.domain,
         status=camera.status,
         last_seen_at=camera.last_seen_at,
+        rules=CameraRules(
+            zone=Zone(left=camera.zone_left, top=camera.zone_top, right=camera.zone_right, bottom=camera.zone_bottom),
+            sustained_motion_s=camera.sustained_motion_s,
+            active_hours=(
+                None if camera.active_from is None
+                else ActiveHours(start=camera.active_from, end=camera.active_until)
+            ),
+        ),
     )
 
 
@@ -119,6 +130,18 @@ def update_camera(
     updates = payload.model_dump(exclude_unset=True)
     if "group" in updates:
         camera.group_name = updates.pop("group")
+    # OMNI-908: the rule settings map onto their columns. `zone` and `sustained_motion_s`
+    # cannot be cleared; `active_hours: null` turns the hours rule off.
+    if "zone" in updates:
+        zone = updates.pop("zone")
+        if zone is not None:
+            camera.zone_left, camera.zone_top = zone["left"], zone["top"]
+            camera.zone_right, camera.zone_bottom = zone["right"], zone["bottom"]
+    if updates.get("sustained_motion_s", 0) is None:
+        updates.pop("sustained_motion_s")
+    if "active_hours" in updates:
+        hours = updates.pop("active_hours")
+        camera.active_from, camera.active_until = (hours["start"], hours["end"]) if hours else (None, None)
     for field, value in updates.items():
         setattr(camera, field, value)
 

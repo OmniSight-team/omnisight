@@ -301,6 +301,8 @@ def run_gate(
             row.frame_path = segment["frame_path"]
             row.thumb_path = segment["thumb_path"]
             row.file_bytes = segment.get("file_bytes", 0)
+            row.motion_cells = segment.get("motion_cells")
+            row.motion_grid = segment.get("motion_grid")
             if segment["admitted"]:
                 admitted += 1
 
