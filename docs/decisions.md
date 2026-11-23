@@ -52,6 +52,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-44 | **Deviation:** the Search page shows at most 2 moments of one video or camera, grouped inside Qdrant's search; B.3's plain top K stays everywhere else | 2026-11-06 | Done |
 | D-45 | The upload limit is raised from 500 MB to 2,048 MB, for the demo set; the 900 s extraction timeout stays | 2026-11-08 | Done |
 | D-47 | A video is known by its fingerprint (SHA-256 of the file); Colab's ready folders are added by a host script, not a mount | 2026-11-20 | Done |
+| D-49 | UCA-timed UCF-Crime windows end 8 s before the UCA time (K-20); the windows are rebuilt once for it. Revises D-24 | 2026-11-23 | Done |
 
 ---
 
@@ -1181,3 +1182,45 @@ of it comes up empty). Not a button yet (Ahmad, 2026-11-20).
 
 **Kept:** the vectors are only used if made with the pinned models (D-30, D-33) and ingestion's extraction settings,
 and only if every admitted frame matches; otherwise nothing is imported and the frames go to the CPU encoder (D-32).
+
+## D-49 · UCA-timed windows end 8 s before the UCA time · 2026-11-23
+
+**Why:** K-20. In the hand check (OMNI-609), 5 of 15 UCA-timed windows were wrong against 2 of 15 official ones,
+mostly because they *contain* the event: UCA's sentence often describes the act once it is under way. A forecaster
+trained on them would partly learn to recognise events instead of foreseeing them.
+
+**Which fix:** K-20 listed three. *Train on official-timed windows only* is not possible: all 140 official-timed
+windows are held-out (they are the official test videos), and every train and validation positive (540 per length)
+is UCA-timed. *Check every UCA window by eye* is too slow. So: **move every UCA-timed window's end 8 s earlier,
+keeping its length L**: `[t_UCA - 8 - L, t_UCA - 8)`, flagged `uca_margin` in `datasets/windows/ucf_crime.csv`.
+The event time stays the UCA time, `window_end_s + 8` (OMNI-903 needs it for `τ`).
+
+**Why 8 s,** from the annotations only, never from a model:
+
+| Evidence | 0 s (before) | 3 s | 5 s | 8 s |
+|---|---|---|---|---|
+| Hand check, UCA "ends too late" Wrongs cleared (late by 2.8, 8.9, 40.6 s) | 0 of 3 | 1 | 1 | **2** |
+| 110 test videos with both times (OMNI-603): UCA more than 1.5 s after the official start, past the margin | 18 (16%) | 14 | 11 | **8 (7%)** |
+| Train + validation UCA windows kept (per length) | 540 | 437 | 402 | **358** |
+
+8 s is the smallest whole-second margin that clears every late UCA Wrong in the hand check except Stealing043 (40.6 s
+late, a mislabel no margin fixes), and it halves the share of UCA times inside the event on the test videos. The
+cost: 182 UCA events start less than 8 s into their video, so they have no footage before the margin and get no
+window (new skip reason). These were the shortest lead-ups. Official-timed and CCD windows are unchanged.
+
+**What the UCF-Crime head learns from this:** on train and validation it never sees the last 8 s before a UCA time
+(`τ ≥ 8 s` for UCA samples); on the held-out windows (official times) `τ` goes down to 0. SM-2 reads held-out
+windows as they are.
+
+**Rebuilt once, not silently:** `build_event_windows.py --replace` (D-24's "fixed once" kept for every other
+rebuild). It writes the CSVs only: `event_windows` keeps the OMNI-607 windows and OMNI-609's verdicts on them
+(UCF-Crime is no longer loaded in the product, so the check screen does not use them). The hand-check sample keeps
+drawing from the OMNI-607 pool (`hand_check.windowed_clips`), so it still redraws byte for byte.
+
+**The re-check criterion, written before any clip is watched:** a fresh sample of 15 UCA-timed 30 s windows (seed
+901, round-robin over the classes, none from OMNI-609's sample), `datasets/hand_check/uca_recheck.csv`, watched from
+the Drive copy. For each clip the checker writes the second where the act visibly begins, by D-27's per-class rules
+(`none` if never seen, `?` if unclear). A window is **clean** when the act begins no earlier than 1.5 s (D-27's
+tolerance) before the window's end. D-27's "ends too early" no longer applies: the window ends 8 s early on purpose.
+Also reported, to compare with OMNI-609's 10 of 15: whether the UCA time itself is within 1.5 s of the act.
+`scripts/uca_recheck.py report` computes both.

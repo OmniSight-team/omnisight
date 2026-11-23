@@ -18,6 +18,11 @@ Needs Postgres up with the manifest built and split (`build_dataset_manifest.py`
 `build_dataset_split.py`). From the repo root:
 
   uv run python scripts/build_event_windows.py
+
+`--replace` overwrites the CSVs when the rules themselves were changed by a recorded
+decision (D-49: UCA-timed windows end 8 s earlier). It leaves `event_windows` alone: the
+table keeps the OMNI-607 windows and OMNI-609's hand-check verdicts on them; training reads
+the CSVs. Prints the old and new SHA-256 of every file it rewrites.
 """
 
 import hashlib
@@ -87,6 +92,7 @@ def report(dataset: str, entries, probes, windows, skipped) -> None:
 
 
 def main() -> int:
+    replace = "--replace" in sys.argv[1:]
     built = {}
     for dataset, load in LOADERS.items():
         entries = load(DATA / dataset)
@@ -98,13 +104,25 @@ def main() -> int:
     for dataset, (_, _, windows, skipped) in built.items():
         files[WINDOWS / f"{dataset}.csv"] = windows_csv(windows)
         files[WINDOWS / f"{dataset}_skipped.csv"] = skipped_csv(skipped)
+    old = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in files if p.exists()}
     for path, data in files.items():
-        if path.exists() and path.read_bytes() != data:
+        if path.exists() and path.read_bytes() != data and not replace:
             print(f"{path} exists and the rebuilt windows differ: windows are fixed once. Nothing written.")
             return 1
     WINDOWS.mkdir(parents=True, exist_ok=True)
     for path, data in files.items():
         path.write_bytes(data)
+
+    if replace:
+        print(f"seed {SEED}  (--replace: event_windows not touched)")
+        for dataset, (entries, probes, windows, skipped) in built.items():
+            report(dataset, entries, probes, windows, skipped)
+        print("\nFiles:")
+        for path, data in files.items():
+            new = hashlib.sha256(data).hexdigest()
+            state = "unchanged" if old.get(path) == new else f"was {old.get(path, 'absent')}"
+            print(f"  {path.relative_to(ROOT).as_posix():40s} {len(data.splitlines()) - 1:6d} rows  sha256 {new}  ({state})")
+        return 0
 
     with SessionLocal() as session:
         for dataset, (_, _, windows, _) in built.items():

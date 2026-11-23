@@ -307,6 +307,11 @@ UCA 42-85% correct, official 62-96%), so the size of the gap is not settled.
 **Fix candidates, for slice 9:** train on official-timed windows only, or weight them up;
 check more UCA windows by eye before trusting them (the sample code redraws with a new
 seed); or move UCA-derived window ends earlier by a margin and measure the effect.
+**2026-11-23 (OMNI-901):** fix applied, D-49: every UCA-timed window ends 8 s before the UCA
+time (official-only training is impossible: every official-timed window is held-out). 182
+UCA events less than 8 s into their video lost their window; 358 per length remain. A fresh
+sample of 15 (`datasets/hand_check/uca_recheck.csv`, seed 901) is drawn and waits for the
+check by eye; this issue closes or stays open on its result.
 
 ## K-19 · A test run left a live worker capturing for a deleted camera
 

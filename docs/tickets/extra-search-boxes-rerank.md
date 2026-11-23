@@ -54,7 +54,7 @@ Ahmad works on the forecasting model and the Alerts page at the same time
 
 - This ticket touches only the files above.
 - Do not edit `services/pfm/`, the alerts routes and tables, or the Alerts page.
-- **This ticket's decision is D-48.** (Ahmad's sprint starts at D-49; D-46 is reserved.)
+- **This ticket's decision is D-48.** (Ahmad uses D-49 and up; D-46 is reserved.)
 - Shared files (`docs/results.md`, `docs/decisions.md`, `.env.example`): small additions only.
 
 ---

@@ -15,6 +15,11 @@ the predictor sees "30s and 60s sliding windows" (§4.1, TC-5). No dataset ships
   windows of the same split
 - **Duration and fps** come from each video's own probe (`video_probe.csv`, written by
   `scripts/probe_dataset_videos.py`), never assumed
+- **UCA-timed windows end 8 s earlier** (D-49, K-20): `[event_start - 8 - L, event_start - 8)`,
+  flagged `uca_margin`, because UCA's times often fall after the act has begun. The event
+  time is `window_end_s + UCA_MARGIN_S` for a flagged window. An event less than 8 s into
+  its video then has no footage before the margin and gets no window. Official and CCD
+  times are unchanged
 
 Pure functions over the loaders' entries, the committed split and the probes, so Colab can
 import them. Deterministic: seed 607, inputs sorted before any random draw.
@@ -32,6 +37,10 @@ SEED = 607
 UCF_LENGTHS_S = (30.0, 60.0)
 POSITIVE, NEGATIVE = "positive", "negative"
 SHORTENED = "shortened"
+UCA_MARGIN = "uca_margin"
+# D-49: how much earlier a UCA-timed window ends than the UCA event time. Chosen from the
+# hand check (OMNI-609) and UCA's agreement with the official times (OMNI-603), not from a model.
+UCA_MARGIN_S = 8.0
 PROBE_LISTING = "video_probe.csv"
 # The rate each dataset's labels are written at: UCF-Crime's official frame numbers (its
 # readme) and CCD's binlabels (one per frame at 10 fps). A video at another rate is reported.
@@ -47,6 +56,7 @@ SECOND_INTERVAL = "second interval: its lead-up overlaps the first event"
 EVENT_AT_ZERO = "event starts at 0 s: no footage before it"
 EVENT_PAST_END = "event starts after the probed end of the video"
 UNTIMED = "no event time"
+UCA_TOO_EARLY = "UCA event less than 8 s into the video: no footage before the margin"
 
 
 @dataclass(frozen=True)
@@ -69,6 +79,7 @@ class Window:
     split: str
     fps: float
     shortened: bool
+    margin_s: float = 0.0  # UCA_MARGIN_S on a UCA-timed window, else 0
 
     @property
     def length_s(self) -> float:
@@ -118,13 +129,18 @@ def _ms(x: float) -> float:
     return round(x, 3)
 
 
+def _margin(e: ManifestEntry) -> float:
+    return UCA_MARGIN_S if e.annotation_source == AnnotationSource.UCA else 0.0
+
+
 def _positive(e: ManifestEntry, split: str, probe: Probe, length: float | None) -> Window:
-    end = _ms(e.event_start_s)
+    margin = _margin(e)
+    end = _ms(e.event_start_s - margin)
     start = 0.0 if length is None else _ms(max(0.0, end - length))
     return Window(
         clip_key=e.clip_key, video_relpath=e.video_relpath, kind=POSITIVE, nominal_length_s=length,
         window_start_s=start, window_end_s=end, event_class=e.event_class, domain=e.domain, split=split,
-        fps=probe.fps, shortened=length is not None and end < length,
+        fps=probe.fps, shortened=length is not None and end < length, margin_s=margin,
     )
 
 
@@ -150,6 +166,8 @@ def _event_skip_reason(e: ManifestEntry, probe: Probe) -> str | None:
         return EVENT_AT_ZERO
     if e.event_start_s > probe.duration_s:
         return EVENT_PAST_END
+    if _margin(e) and _ms(e.event_start_s - _margin(e)) <= 0:
+        return UCA_TOO_EARLY
     return None
 
 
@@ -212,14 +230,19 @@ def _num(x: float | None) -> str:
     return "" if x is None else f"{x:.3f}".rstrip("0").rstrip(".")
 
 
+def _flags(w: Window) -> str:
+    return ";".join(f for f, on in ((SHORTENED, w.shortened), (UCA_MARGIN, w.margin_s > 0)) if on)
+
+
 def windows_csv(windows: list[Window]) -> bytes:
-    """The exported file: sorted by clip, kind, length; LF line endings."""
+    """The exported file: sorted by clip, kind, length; LF line endings. `flags` is
+    `;`-separated: `shortened`, `uca_margin` (the event is at `window_end_s + UCA_MARGIN_S`)."""
     rows = sorted(windows, key=lambda w: (w.clip_key, w.kind, w.nominal_length_s or 0.0))
     lines = [WINDOWS_HEADER] + [
         ",".join((
             w.clip_key, w.video_relpath, w.kind, _num(w.nominal_length_s), _num(w.window_start_s),
             _num(w.window_end_s), _num(w.length_s), w.event_class, w.split, f"{w.fps:.6g}",
-            SHORTENED if w.shortened else "",
+            _flags(w),
         ))
         for w in rows
     ]

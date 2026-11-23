@@ -3,14 +3,32 @@ Abuse002_x264.mp4,Abuse,train,1,30,no event time
 Abuse002_x264.mp4,Abuse,train,1,60,no event time
 Abuse003_x264.mp4,Abuse,train,1,30,event starts at 0 s: no footage before it
 Abuse003_x264.mp4,Abuse,train,1,60,event starts at 0 s: no footage before it
+Abuse005_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse005_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Abuse006_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse006_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Abuse007_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse007_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse008_x264.mp4,Abuse,train,1,30,event starts at 0 s: no footage before it
 Abuse008_x264.mp4,Abuse,train,1,60,event starts at 0 s: no footage before it
+Abuse010_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse010_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse013_x264.mp4,Abuse,train,1,30,event starts at 0 s: no footage before it
 Abuse013_x264.mp4,Abuse,train,1,60,event starts at 0 s: no footage before it
 Abuse014_x264.mp4,Abuse,train,1,30,no event time
 Abuse014_x264.mp4,Abuse,train,1,60,no event time
+Abuse017_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse017_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Abuse018_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse018_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Abuse020_x264.mp4,Abuse,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse020_x264.mp4,Abuse,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse022_x264.mp4,Abuse,train,1,30,event starts at 0 s: no footage before it
 Abuse022_x264.mp4,Abuse,train,1,60,event starts at 0 s: no footage before it
+Abuse023_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse023_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Abuse024_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse024_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse025_x264.mp4,Abuse,train,1,30,no event time
 Abuse025_x264.mp4,Abuse,train,1,60,no event time
 Abuse026_x264.mp4,Abuse,train,1,30,event starts at 0 s: no footage before it
@@ -19,18 +37,32 @@ Abuse029_x264.mp4,Abuse,train,1,30,no event time
 Abuse029_x264.mp4,Abuse,train,1,60,no event time
 Abuse031_x264.mp4,Abuse,train,1,30,no event time
 Abuse031_x264.mp4,Abuse,train,1,60,no event time
+Abuse033_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse033_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse034_x264.mp4,Abuse,train,1,30,no event time
 Abuse034_x264.mp4,Abuse,train,1,60,no event time
+Abuse035_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse035_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse036_x264.mp4,Abuse,validation,1,30,no event time
 Abuse036_x264.mp4,Abuse,validation,1,60,no event time
 Abuse037_x264.mp4,Abuse,train,1,30,no event time
 Abuse037_x264.mp4,Abuse,train,1,60,no event time
+Abuse038_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse038_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse041_x264.mp4,Abuse,validation,1,30,no event time
 Abuse041_x264.mp4,Abuse,validation,1,60,no event time
 Abuse045_x264.mp4,Abuse,train,1,30,event starts at 0 s: no footage before it
 Abuse045_x264.mp4,Abuse,train,1,60,event starts at 0 s: no footage before it
+Abuse046_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse046_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Abuse047_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse047_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Abuse048_x264.mp4,Abuse,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Abuse048_x264.mp4,Abuse,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Abuse049_x264.mp4,Abuse,train,1,30,no event time
 Abuse049_x264.mp4,Abuse,train,1,60,no event time
+Arrest002_x264.mp4,Arrest,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arrest002_x264.mp4,Arrest,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Arrest008_x264.mp4,Arrest,train,1,30,no event time
 Arrest008_x264.mp4,Arrest,train,1,60,no event time
 Arrest009_x264.mp4,Arrest,train,1,30,no event time
@@ -51,6 +83,8 @@ Arrest019_x264.mp4,Arrest,train,1,30,no event time
 Arrest019_x264.mp4,Arrest,train,1,60,no event time
 Arrest020_x264.mp4,Arrest,train,1,30,no event time
 Arrest020_x264.mp4,Arrest,train,1,60,no event time
+Arrest023_x264.mp4,Arrest,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arrest023_x264.mp4,Arrest,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Arrest027_x264.mp4,Arrest,train,1,30,no event time
 Arrest027_x264.mp4,Arrest,train,1,60,no event time
 Arrest032_x264.mp4,Arrest,train,1,30,event starts at 0 s: no footage before it
@@ -61,32 +95,98 @@ Arrest041_x264.mp4,Arrest,train,1,30,no event time
 Arrest041_x264.mp4,Arrest,train,1,60,no event time
 Arrest044_x264.mp4,Arrest,train,1,30,no event time
 Arrest044_x264.mp4,Arrest,train,1,60,no event time
+Arrest046_x264.mp4,Arrest,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arrest046_x264.mp4,Arrest,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Arrest050_x264.mp4,Arrest,validation,1,30,no event time
 Arrest050_x264.mp4,Arrest,validation,1,60,no event time
+Arson003_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson003_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Arson005_x264.mp4,Arson,train,1,30,event starts at 0 s: no footage before it
 Arson005_x264.mp4,Arson,train,1,60,event starts at 0 s: no footage before it
+Arson008_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson008_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Arson011_x264.mp4,Arson,held_out,2,30,second interval: its lead-up overlaps the first event
 Arson011_x264.mp4,Arson,held_out,2,60,second interval: its lead-up overlaps the first event
+Arson012_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson012_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Arson017_x264.mp4,Arson,train,1,30,no event time
 Arson017_x264.mp4,Arson,train,1,60,no event time
+Arson027_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson027_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson031_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson031_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson032_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson032_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson036_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson036_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Arson038_x264.mp4,Arson,train,1,30,no event time
 Arson038_x264.mp4,Arson,train,1,60,no event time
+Arson039_x264.mp4,Arson,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson039_x264.mp4,Arson,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson040_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson040_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson044_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson044_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson048_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson048_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson049_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson049_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson051_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson051_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Arson053_x264.mp4,Arson,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Arson053_x264.mp4,Arson,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault001_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault001_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Assault010_x264.mp4,Assault,held_out,2,30,second interval: its lead-up overlaps the first event
 Assault010_x264.mp4,Assault,held_out,2,60,second interval: its lead-up overlaps the first event
 Assault015_x264.mp4,Assault,train,1,30,no event time
 Assault015_x264.mp4,Assault,train,1,60,no event time
+Assault018_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault018_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault020_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault020_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault024_x264.mp4,Assault,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault024_x264.mp4,Assault,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault026_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault026_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault029_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault029_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Assault030_x264.mp4,Assault,train,1,30,no event time
 Assault030_x264.mp4,Assault,train,1,60,no event time
+Assault031_x264.mp4,Assault,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault031_x264.mp4,Assault,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Assault032_x264.mp4,Assault,train,1,30,no event time
 Assault032_x264.mp4,Assault,train,1,60,no event time
+Assault035_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault035_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault036_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault036_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault038_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault038_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault039_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault039_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault044_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault044_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Assault045_x264.mp4,Assault,train,1,30,no event time
 Assault045_x264.mp4,Assault,train,1,60,no event time
 Assault046_x264.mp4,Assault,validation,1,30,no event time
 Assault046_x264.mp4,Assault,validation,1,60,no event time
+Assault047_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault047_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault048_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault048_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault050_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault050_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Assault052_x264.mp4,Assault,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Assault052_x264.mp4,Assault,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Burglary001_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary001_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary002_x264.mp4,Burglary,validation,1,30,no event time
 Burglary002_x264.mp4,Burglary,validation,1,60,no event time
 Burglary003_x264.mp4,Burglary,train,1,30,no event time
 Burglary003_x264.mp4,Burglary,train,1,60,no event time
+Burglary006_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary006_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary013_x264.mp4,Burglary,train,1,30,no event time
 Burglary013_x264.mp4,Burglary,train,1,60,no event time
 Burglary014_x264.mp4,Burglary,train,1,30,no event time
@@ -95,12 +195,20 @@ Burglary015_x264.mp4,Burglary,train,1,30,no event time
 Burglary015_x264.mp4,Burglary,train,1,60,no event time
 Burglary016_x264.mp4,Burglary,train,1,30,no event time
 Burglary016_x264.mp4,Burglary,train,1,60,no event time
+Burglary019_x264.mp4,Burglary,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary019_x264.mp4,Burglary,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary021_x264.mp4,Burglary,held_out,2,30,second interval: its lead-up overlaps the first event
 Burglary021_x264.mp4,Burglary,held_out,2,60,second interval: its lead-up overlaps the first event
+Burglary022_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary022_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary023_x264.mp4,Burglary,train,1,30,no event time
 Burglary023_x264.mp4,Burglary,train,1,60,no event time
 Burglary025_x264.mp4,Burglary,train,1,30,no event time
 Burglary025_x264.mp4,Burglary,train,1,60,no event time
+Burglary026_x264.mp4,Burglary,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary026_x264.mp4,Burglary,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
+Burglary027_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary027_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary028_x264.mp4,Burglary,validation,1,30,no event time
 Burglary028_x264.mp4,Burglary,validation,1,60,no event time
 Burglary029_x264.mp4,Burglary,train,1,30,no event time
@@ -113,12 +221,20 @@ Burglary036_x264.mp4,Burglary,validation,1,30,no event time
 Burglary036_x264.mp4,Burglary,validation,1,60,no event time
 Burglary037_x264.mp4,Burglary,held_out,2,30,second interval: its lead-up overlaps the first event
 Burglary037_x264.mp4,Burglary,held_out,2,60,second interval: its lead-up overlaps the first event
+Burglary038_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary038_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary039_x264.mp4,Burglary,train,1,30,no event time
 Burglary039_x264.mp4,Burglary,train,1,60,no event time
+Burglary041_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary041_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary042_x264.mp4,Burglary,train,1,30,no event time
 Burglary042_x264.mp4,Burglary,train,1,60,no event time
+Burglary045_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary045_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary048_x264.mp4,Burglary,train,1,30,no event time
 Burglary048_x264.mp4,Burglary,train,1,60,no event time
+Burglary049_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary049_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary050_x264.mp4,Burglary,validation,1,30,no event time
 Burglary050_x264.mp4,Burglary,validation,1,60,no event time
 Burglary051_x264.mp4,Burglary,train,1,30,no event time
@@ -133,18 +249,28 @@ Burglary056_x264.mp4,Burglary,validation,1,30,no event time
 Burglary056_x264.mp4,Burglary,validation,1,60,no event time
 Burglary059_x264.mp4,Burglary,train,1,30,no event time
 Burglary059_x264.mp4,Burglary,train,1,60,no event time
+Burglary060_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary060_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary062_x264.mp4,Burglary,train,1,30,no event time
 Burglary062_x264.mp4,Burglary,train,1,60,no event time
 Burglary063_x264.mp4,Burglary,train,1,30,no event time
 Burglary063_x264.mp4,Burglary,train,1,60,no event time
 Burglary065_x264.mp4,Burglary,train,1,30,no event time
 Burglary065_x264.mp4,Burglary,train,1,60,no event time
+Burglary066_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary066_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary067_x264.mp4,Burglary,train,1,30,no event time
 Burglary067_x264.mp4,Burglary,train,1,60,no event time
+Burglary068_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary068_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary069_x264.mp4,Burglary,train,1,30,no event time
 Burglary069_x264.mp4,Burglary,train,1,60,no event time
+Burglary070_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary070_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary071_x264.mp4,Burglary,train,1,30,no event time
 Burglary071_x264.mp4,Burglary,train,1,60,no event time
+Burglary072_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary072_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary074_x264.mp4,Burglary,train,1,30,no event time
 Burglary074_x264.mp4,Burglary,train,1,60,no event time
 Burglary078_x264.mp4,Burglary,train,1,30,no event time
@@ -155,12 +281,18 @@ Burglary082_x264.mp4,Burglary,train,1,30,no event time
 Burglary082_x264.mp4,Burglary,train,1,60,no event time
 Burglary083_x264.mp4,Burglary,train,1,30,no event time
 Burglary083_x264.mp4,Burglary,train,1,60,no event time
+Burglary084_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary084_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary085_x264.mp4,Burglary,train,1,30,no event time
 Burglary085_x264.mp4,Burglary,train,1,60,no event time
 Burglary086_x264.mp4,Burglary,train,1,30,no event time
 Burglary086_x264.mp4,Burglary,train,1,60,no event time
 Burglary087_x264.mp4,Burglary,train,1,30,no event time
 Burglary087_x264.mp4,Burglary,train,1,60,no event time
+Burglary088_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary088_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Burglary089_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary089_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary093_x264.mp4,Burglary,train,1,30,no event time
 Burglary093_x264.mp4,Burglary,train,1,60,no event time
 Burglary094_x264.mp4,Burglary,train,1,30,no event time
@@ -171,14 +303,20 @@ Burglary096_x264.mp4,Burglary,validation,1,30,no event time
 Burglary096_x264.mp4,Burglary,validation,1,60,no event time
 Burglary097_x264.mp4,Burglary,train,1,30,no event time
 Burglary097_x264.mp4,Burglary,train,1,60,no event time
+Burglary098_x264.mp4,Burglary,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Burglary098_x264.mp4,Burglary,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Burglary099_x264.mp4,Burglary,train,1,30,no event time
 Burglary099_x264.mp4,Burglary,train,1,60,no event time
 Burglary100_x264.mp4,Burglary,train,1,30,no event time
 Burglary100_x264.mp4,Burglary,train,1,60,no event time
 Explosion001_x264.mp4,Explosion,train,1,30,no event time
 Explosion001_x264.mp4,Explosion,train,1,60,no event time
+Explosion003_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion003_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Explosion005_x264.mp4,Explosion,train,1,30,no event time
 Explosion005_x264.mp4,Explosion,train,1,60,no event time
+Explosion006_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion006_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Explosion009_x264.mp4,Explosion,train,1,30,no event time
 Explosion009_x264.mp4,Explosion,train,1,60,no event time
 Explosion012_x264.mp4,Explosion,train,1,30,event starts at 0 s: no footage before it
@@ -197,16 +335,34 @@ Explosion026_x264.mp4,Explosion,train,1,30,no event time
 Explosion026_x264.mp4,Explosion,train,1,60,no event time
 Explosion030_x264.mp4,Explosion,train,1,30,no event time
 Explosion030_x264.mp4,Explosion,train,1,60,no event time
+Explosion032_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion032_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Explosion033_x264.mp4,Explosion,held_out,2,30,second interval: its lead-up overlaps the first event
 Explosion033_x264.mp4,Explosion,held_out,2,60,second interval: its lead-up overlaps the first event
 Explosion034_x264.mp4,Explosion,train,1,30,event starts at 0 s: no footage before it
 Explosion034_x264.mp4,Explosion,train,1,60,event starts at 0 s: no footage before it
+Explosion037_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion037_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Explosion038_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion038_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Explosion042_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion042_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Explosion044_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion044_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Explosion046_x264.mp4,Explosion,train,1,30,no event time
 Explosion046_x264.mp4,Explosion,train,1,60,no event time
+Explosion048_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion048_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Explosion050_x264.mp4,Explosion,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Explosion050_x264.mp4,Explosion,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Fighting002_x264.mp4,Fighting,validation,1,30,no event time
 Fighting002_x264.mp4,Fighting,validation,1,60,no event time
+Fighting004_x264.mp4,Fighting,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting004_x264.mp4,Fighting,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Fighting005_x264.mp4,Fighting,train,1,30,no event time
 Fighting005_x264.mp4,Fighting,train,1,60,no event time
+Fighting007_x264.mp4,Fighting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting007_x264.mp4,Fighting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Fighting010_x264.mp4,Fighting,train,1,30,no event time
 Fighting010_x264.mp4,Fighting,train,1,60,no event time
 Fighting012_x264.mp4,Fighting,train,1,30,event starts at 0 s: no footage before it
@@ -215,18 +371,44 @@ Fighting013_x264.mp4,Fighting,train,1,30,event starts at 0 s: no footage before 
 Fighting013_x264.mp4,Fighting,train,1,60,event starts at 0 s: no footage before it
 Fighting016_x264.mp4,Fighting,train,1,30,no event time
 Fighting016_x264.mp4,Fighting,train,1,60,no event time
+Fighting020_x264.mp4,Fighting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting020_x264.mp4,Fighting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Fighting022_x264.mp4,Fighting,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting022_x264.mp4,Fighting,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Fighting023_x264.mp4,Fighting,train,1,30,no event time
 Fighting023_x264.mp4,Fighting,train,1,60,no event time
+Fighting024_x264.mp4,Fighting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting024_x264.mp4,Fighting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Fighting025_x264.mp4,Fighting,train,1,30,no event time
 Fighting025_x264.mp4,Fighting,train,1,60,no event time
+Fighting029_x264.mp4,Fighting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting029_x264.mp4,Fighting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Fighting035_x264.mp4,Fighting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting035_x264.mp4,Fighting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Fighting036_x264.mp4,Fighting,train,1,30,event starts at 0 s: no footage before it
 Fighting036_x264.mp4,Fighting,train,1,60,event starts at 0 s: no footage before it
 Fighting046_x264.mp4,Fighting,train,1,30,no event time
 Fighting046_x264.mp4,Fighting,train,1,60,no event time
+Fighting049_x264.mp4,Fighting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Fighting049_x264.mp4,Fighting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents003_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents003_x264.mp4,RoadAccidents,train,1,60,no event time
 RoadAccidents005_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents005_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents006_x264.mp4,RoadAccidents,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents006_x264.mp4,RoadAccidents,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents008_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents008_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents014_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents014_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents024_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents024_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents026_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents026_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents027_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents027_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents028_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents028_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents029_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents029_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
 RoadAccidents031_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
@@ -243,12 +425,34 @@ RoadAccidents039_x264.mp4,RoadAccidents,validation,1,30,event starts at 0 s: no 
 RoadAccidents039_x264.mp4,RoadAccidents,validation,1,60,event starts at 0 s: no footage before it
 RoadAccidents041_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents041_x264.mp4,RoadAccidents,train,1,60,no event time
+RoadAccidents043_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents043_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents044_x264.mp4,RoadAccidents,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents044_x264.mp4,RoadAccidents,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents046_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents046_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents047_x264.mp4,RoadAccidents,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents047_x264.mp4,RoadAccidents,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents049_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents049_x264.mp4,RoadAccidents,train,1,60,no event time
+RoadAccidents051_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents051_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents052_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents052_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents054_x264.mp4,RoadAccidents,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents054_x264.mp4,RoadAccidents,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents055_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents055_x264.mp4,RoadAccidents,train,1,60,no event time
+RoadAccidents056_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents056_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents058_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents058_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents059_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents059_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents060_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents060_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents061_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents061_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents062_x264.mp4,RoadAccidents,validation,1,30,event starts at 0 s: no footage before it
 RoadAccidents062_x264.mp4,RoadAccidents,validation,1,60,event starts at 0 s: no footage before it
 RoadAccidents063_x264.mp4,RoadAccidents,train,1,30,no event time
@@ -259,20 +463,44 @@ RoadAccidents066_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no foota
 RoadAccidents066_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
 RoadAccidents069_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents069_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents070_x264.mp4,RoadAccidents,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents070_x264.mp4,RoadAccidents,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents071_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents071_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents074_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents074_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents075_x264.mp4,RoadAccidents,validation,1,30,event starts at 0 s: no footage before it
 RoadAccidents075_x264.mp4,RoadAccidents,validation,1,60,event starts at 0 s: no footage before it
+RoadAccidents077_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents077_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents079_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents079_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents080_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents080_x264.mp4,RoadAccidents,train,1,60,no event time
+RoadAccidents083_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents083_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents086_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents086_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents087_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents087_x264.mp4,RoadAccidents,train,1,60,no event time
+RoadAccidents088_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents088_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents090_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents090_x264.mp4,RoadAccidents,train,1,60,no event time
 RoadAccidents092_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents092_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents093_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents093_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents094_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents094_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents095_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents095_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents096_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents096_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents097_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents097_x264.mp4,RoadAccidents,train,1,60,no event time
+RoadAccidents100_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents100_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents101_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents101_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
 RoadAccidents102_x264.mp4,RoadAccidents,train,1,30,no event time
@@ -283,16 +511,40 @@ RoadAccidents104_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no foota
 RoadAccidents104_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
 RoadAccidents105_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents105_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents107_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents107_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents109_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents109_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents110_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents110_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents111_x264.mp4,RoadAccidents,validation,1,30,no event time
 RoadAccidents111_x264.mp4,RoadAccidents,validation,1,60,no event time
 RoadAccidents112_x264.mp4,RoadAccidents,train,1,30,no event time
 RoadAccidents112_x264.mp4,RoadAccidents,train,1,60,no event time
+RoadAccidents115_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents115_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents117_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents117_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents118_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents118_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents120_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents120_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents129_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents129_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents130_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents130_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents134_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents134_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+RoadAccidents136_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents136_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents137_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents137_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents138_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents138_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents141_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents141_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents143_x264.mp4,RoadAccidents,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+RoadAccidents143_x264.mp4,RoadAccidents,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 RoadAccidents144_x264.mp4,RoadAccidents,validation,1,30,no event time
 RoadAccidents144_x264.mp4,RoadAccidents,validation,1,60,no event time
 RoadAccidents146_x264.mp4,RoadAccidents,train,1,30,no event time
@@ -303,40 +555,94 @@ RoadAccidents150_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no foota
 RoadAccidents150_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
 RoadAccidents151_x264.mp4,RoadAccidents,train,1,30,event starts at 0 s: no footage before it
 RoadAccidents151_x264.mp4,RoadAccidents,train,1,60,event starts at 0 s: no footage before it
+Robbery002_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery002_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery005_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery005_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery008_x264.mp4,Robbery,train,1,30,no event time
 Robbery008_x264.mp4,Robbery,train,1,60,no event time
 Robbery009_x264.mp4,Robbery,train,1,30,no event time
 Robbery009_x264.mp4,Robbery,train,1,60,no event time
+Robbery013_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery013_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery015_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery015_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery019_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery019_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery021_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery021_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery022_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery022_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery023_x264.mp4,Robbery,train,1,30,no event time
 Robbery023_x264.mp4,Robbery,train,1,60,no event time
+Robbery024_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery024_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery025_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery025_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery028_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery028_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery030_x264.mp4,Robbery,validation,1,30,no event time
 Robbery030_x264.mp4,Robbery,validation,1,60,no event time
+Robbery033_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery033_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery039_x264.mp4,Robbery,train,1,30,no event time
 Robbery039_x264.mp4,Robbery,train,1,60,no event time
 Robbery040_x264.mp4,Robbery,train,1,30,no event time
 Robbery040_x264.mp4,Robbery,train,1,60,no event time
+Robbery041_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery041_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery042_x264.mp4,Robbery,validation,1,30,no event time
 Robbery042_x264.mp4,Robbery,validation,1,60,no event time
+Robbery043_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery043_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery044_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery044_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery046_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery046_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery047_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery047_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery051_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery051_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery054_x264.mp4,Robbery,train,1,30,no event time
 Robbery054_x264.mp4,Robbery,train,1,60,no event time
+Robbery056_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery056_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery057_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery057_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery058_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery058_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery060_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery060_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery062_x264.mp4,Robbery,train,1,30,event starts at 0 s: no footage before it
 Robbery062_x264.mp4,Robbery,train,1,60,event starts at 0 s: no footage before it
+Robbery065_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery065_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery067_x264.mp4,Robbery,train,1,30,no event time
 Robbery067_x264.mp4,Robbery,train,1,60,no event time
 Robbery069_x264.mp4,Robbery,train,1,30,event starts at 0 s: no footage before it
 Robbery069_x264.mp4,Robbery,train,1,60,event starts at 0 s: no footage before it
 Robbery070_x264.mp4,Robbery,train,1,30,no event time
 Robbery070_x264.mp4,Robbery,train,1,60,no event time
+Robbery074_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery074_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery075_x264.mp4,Robbery,validation,1,30,event starts at 0 s: no footage before it
 Robbery075_x264.mp4,Robbery,validation,1,60,event starts at 0 s: no footage before it
 Robbery076_x264.mp4,Robbery,validation,1,30,no event time
 Robbery076_x264.mp4,Robbery,validation,1,60,no event time
+Robbery077_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery077_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery079_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery079_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery083_x264.mp4,Robbery,train,1,30,no event time
 Robbery083_x264.mp4,Robbery,train,1,60,no event time
+Robbery084_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery084_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery085_x264.mp4,Robbery,train,1,30,no event time
 Robbery085_x264.mp4,Robbery,train,1,60,no event time
 Robbery087_x264.mp4,Robbery,train,1,30,event starts at 0 s: no footage before it
 Robbery087_x264.mp4,Robbery,train,1,60,event starts at 0 s: no footage before it
+Robbery089_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery089_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery091_x264.mp4,Robbery,validation,1,30,event starts at 0 s: no footage before it
 Robbery091_x264.mp4,Robbery,validation,1,60,event starts at 0 s: no footage before it
 Robbery092_x264.mp4,Robbery,train,1,30,no event time
@@ -349,6 +655,8 @@ Robbery096_x264.mp4,Robbery,train,1,30,no event time
 Robbery096_x264.mp4,Robbery,train,1,60,no event time
 Robbery097_x264.mp4,Robbery,train,1,30,no event time
 Robbery097_x264.mp4,Robbery,train,1,60,no event time
+Robbery099_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery099_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery103_x264.mp4,Robbery,train,1,30,no event time
 Robbery103_x264.mp4,Robbery,train,1,60,no event time
 Robbery104_x264.mp4,Robbery,train,1,30,no event time
@@ -363,18 +671,42 @@ Robbery111_x264.mp4,Robbery,validation,1,30,no event time
 Robbery111_x264.mp4,Robbery,validation,1,60,no event time
 Robbery113_x264.mp4,Robbery,train,1,30,no event time
 Robbery113_x264.mp4,Robbery,train,1,60,no event time
+Robbery115_x264.mp4,Robbery,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery115_x264.mp4,Robbery,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery118_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery118_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery119_x264.mp4,Robbery,train,1,30,no event time
 Robbery119_x264.mp4,Robbery,train,1,60,no event time
+Robbery120_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery120_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery121_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery121_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery122_x264.mp4,Robbery,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery122_x264.mp4,Robbery,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery123_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery123_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery127_x264.mp4,Robbery,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery127_x264.mp4,Robbery,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery128_x264.mp4,Robbery,train,1,30,no event time
 Robbery128_x264.mp4,Robbery,train,1,60,no event time
+Robbery129_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery129_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery130_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery130_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Robbery132_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery132_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery135_x264.mp4,Robbery,train,1,30,no event time
 Robbery135_x264.mp4,Robbery,train,1,60,no event time
 Robbery138_x264.mp4,Robbery,train,1,30,no event time
 Robbery138_x264.mp4,Robbery,train,1,60,no event time
 Robbery139_x264.mp4,Robbery,train,1,30,no event time
 Robbery139_x264.mp4,Robbery,train,1,60,no event time
+Robbery140_x264.mp4,Robbery,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery140_x264.mp4,Robbery,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery141_x264.mp4,Robbery,train,1,30,no event time
 Robbery141_x264.mp4,Robbery,train,1,60,no event time
+Robbery143_x264.mp4,Robbery,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Robbery143_x264.mp4,Robbery,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Robbery144_x264.mp4,Robbery,train,1,30,no event time
 Robbery144_x264.mp4,Robbery,train,1,60,no event time
 Robbery145_x264.mp4,Robbery,train,1,30,no event time
@@ -389,6 +721,8 @@ Robbery149_x264.mp4,Robbery,train,1,30,no event time
 Robbery149_x264.mp4,Robbery,train,1,60,no event time
 Robbery150_x264.mp4,Robbery,train,1,30,no event time
 Robbery150_x264.mp4,Robbery,train,1,60,no event time
+Shooting001_x264.mp4,Shooting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Shooting001_x264.mp4,Shooting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Shooting003_x264.mp4,Shooting,train,1,30,no event time
 Shooting003_x264.mp4,Shooting,train,1,60,no event time
 Shooting006_x264.mp4,Shooting,train,1,30,no event time
@@ -397,8 +731,12 @@ Shooting009_x264.mp4,Shooting,train,1,30,no event time
 Shooting009_x264.mp4,Shooting,train,1,60,no event time
 Shooting014_x264.mp4,Shooting,train,1,30,no event time
 Shooting014_x264.mp4,Shooting,train,1,60,no event time
+Shooting023_x264.mp4,Shooting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Shooting023_x264.mp4,Shooting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Shooting027_x264.mp4,Shooting,validation,1,30,event starts at 0 s: no footage before it
 Shooting027_x264.mp4,Shooting,validation,1,60,event starts at 0 s: no footage before it
+Shooting036_x264.mp4,Shooting,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Shooting036_x264.mp4,Shooting,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Shooting041_x264.mp4,Shooting,validation,1,30,no event time
 Shooting041_x264.mp4,Shooting,validation,1,60,no event time
 Shooting044_x264.mp4,Shooting,train,1,30,no event time
@@ -409,6 +747,8 @@ Shooting047_x264.mp4,Shooting,held_out,2,30,second interval: its lead-up overlap
 Shooting047_x264.mp4,Shooting,held_out,2,60,second interval: its lead-up overlaps the first event
 Shooting053_x264.mp4,Shooting,train,1,30,no event time
 Shooting053_x264.mp4,Shooting,train,1,60,no event time
+Shooting054_x264.mp4,Shooting,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Shooting054_x264.mp4,Shooting,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Shoplifting003_x264.mp4,Shoplifting,train,1,30,no event time
 Shoplifting003_x264.mp4,Shoplifting,train,1,60,no event time
 Shoplifting006_x264.mp4,Shoplifting,validation,1,30,no event time
@@ -423,6 +763,8 @@ Shoplifting022_x264.mp4,Shoplifting,held_out,2,30,second interval: its lead-up o
 Shoplifting022_x264.mp4,Shoplifting,held_out,2,60,second interval: its lead-up overlaps the first event
 Shoplifting025_x264.mp4,Shoplifting,validation,1,30,no event time
 Shoplifting025_x264.mp4,Shoplifting,validation,1,60,no event time
+Shoplifting026_x264.mp4,Shoplifting,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Shoplifting026_x264.mp4,Shoplifting,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Shoplifting027_x264.mp4,Shoplifting,held_out,2,30,second interval: its lead-up overlaps the first event
 Shoplifting027_x264.mp4,Shoplifting,held_out,2,60,second interval: its lead-up overlaps the first event
 Shoplifting030_x264.mp4,Shoplifting,train,1,30,no event time
@@ -451,12 +793,20 @@ Stealing013_x264.mp4,Stealing,train,1,30,no event time
 Stealing013_x264.mp4,Stealing,train,1,60,no event time
 Stealing014_x264.mp4,Stealing,validation,1,30,no event time
 Stealing014_x264.mp4,Stealing,validation,1,60,no event time
+Stealing018_x264.mp4,Stealing,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Stealing018_x264.mp4,Stealing,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Stealing019_x264.mp4,Stealing,held_out,2,30,second interval: its lead-up overlaps the first event
 Stealing019_x264.mp4,Stealing,held_out,2,60,second interval: its lead-up overlaps the first event
 Stealing020_x264.mp4,Stealing,train,1,30,no event time
 Stealing020_x264.mp4,Stealing,train,1,60,no event time
 Stealing021_x264.mp4,Stealing,train,1,30,no event time
 Stealing021_x264.mp4,Stealing,train,1,60,no event time
+Stealing024_x264.mp4,Stealing,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Stealing024_x264.mp4,Stealing,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Stealing027_x264.mp4,Stealing,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Stealing027_x264.mp4,Stealing,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Stealing029_x264.mp4,Stealing,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Stealing029_x264.mp4,Stealing,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Stealing030_x264.mp4,Stealing,train,1,30,no event time
 Stealing030_x264.mp4,Stealing,train,1,60,no event time
 Stealing044_x264.mp4,Stealing,train,1,30,no event time
@@ -537,6 +887,8 @@ Vandalism004_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism004_x264.mp4,Vandalism,train,1,60,no event time
 Vandalism006_x264.mp4,Vandalism,train,1,30,event starts at 0 s: no footage before it
 Vandalism006_x264.mp4,Vandalism,train,1,60,event starts at 0 s: no footage before it
+Vandalism012_x264.mp4,Vandalism,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Vandalism012_x264.mp4,Vandalism,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Vandalism013_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism013_x264.mp4,Vandalism,train,1,60,no event time
 Vandalism014_x264.mp4,Vandalism,train,1,30,no event time
@@ -547,6 +899,8 @@ Vandalism019_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism019_x264.mp4,Vandalism,train,1,60,no event time
 Vandalism021_x264.mp4,Vandalism,validation,1,30,no event time
 Vandalism021_x264.mp4,Vandalism,validation,1,60,no event time
+Vandalism022_x264.mp4,Vandalism,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Vandalism022_x264.mp4,Vandalism,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Vandalism024_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism024_x264.mp4,Vandalism,train,1,60,no event time
 Vandalism026_x264.mp4,Vandalism,train,1,30,no event time
@@ -559,15 +913,25 @@ Vandalism029_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism029_x264.mp4,Vandalism,train,1,60,no event time
 Vandalism030_x264.mp4,Vandalism,train,1,30,event starts at 0 s: no footage before it
 Vandalism030_x264.mp4,Vandalism,train,1,60,event starts at 0 s: no footage before it
+Vandalism032_x264.mp4,Vandalism,validation,1,30,UCA event less than 8 s into the video: no footage before the margin
+Vandalism032_x264.mp4,Vandalism,validation,1,60,UCA event less than 8 s into the video: no footage before the margin
 Vandalism033_x264.mp4,Vandalism,train,1,30,event starts at 0 s: no footage before it
 Vandalism033_x264.mp4,Vandalism,train,1,60,event starts at 0 s: no footage before it
+Vandalism035_x264.mp4,Vandalism,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Vandalism035_x264.mp4,Vandalism,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Vandalism036_x264.mp4,Vandalism,held_out,2,30,second interval: its lead-up overlaps the first event
 Vandalism036_x264.mp4,Vandalism,held_out,2,60,second interval: its lead-up overlaps the first event
 Vandalism037_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism037_x264.mp4,Vandalism,train,1,60,no event time
 Vandalism039_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism039_x264.mp4,Vandalism,train,1,60,no event time
+Vandalism040_x264.mp4,Vandalism,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Vandalism040_x264.mp4,Vandalism,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Vandalism041_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism041_x264.mp4,Vandalism,train,1,60,no event time
+Vandalism044_x264.mp4,Vandalism,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Vandalism044_x264.mp4,Vandalism,train,1,60,UCA event less than 8 s into the video: no footage before the margin
+Vandalism049_x264.mp4,Vandalism,train,1,30,UCA event less than 8 s into the video: no footage before the margin
+Vandalism049_x264.mp4,Vandalism,train,1,60,UCA event less than 8 s into the video: no footage before the margin
 Vandalism050_x264.mp4,Vandalism,train,1,30,no event time
 Vandalism050_x264.mp4,Vandalism,train,1,60,no event time

@@ -15,7 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 from omnisight_common.datasets import ccd, ucf_crime
-from omnisight_common.datasets.hand_check import SAMPLERS, SEED, sample_csv
+from omnisight_common.datasets.hand_check import SAMPLERS, SEED, sample_csv, windowed_clips
 
 ROOT = Path(__file__).resolve().parents[1]
 LOADERS = {"ucf_crime": ucf_crime.load, "ccd": ccd.load}
@@ -30,8 +30,7 @@ def main() -> int:
     picked, split = {}, {}
     for dataset, load in LOADERS.items():
         split[dataset] = {r[0]: r[2] for r in rows(ROOT / "datasets" / "splits" / f"{dataset}.csv")}
-        windowed = {r[0] for r in rows(ROOT / "datasets" / "windows" / f"{dataset}.csv") if r[2] == "positive"}
-        picked[dataset] = SAMPLERS[dataset](load(ROOT / "data" / dataset), windowed)
+        picked[dataset] = SAMPLERS[dataset](load(ROOT / "data" / dataset), windowed_clips(ROOT / "datasets" / "windows", dataset))
     data = sample_csv(picked, split)
     if OUT.exists() and OUT.read_bytes() != data:
         print(f"{OUT} exists and the redrawn sample differs: the sample is fixed. Nothing written.")

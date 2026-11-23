@@ -16,6 +16,10 @@ from omnisight_common.datasets.windows import (
     NEGATIVE,
     POSITIVE,
     SECOND_INTERVAL,
+    SHORTENED,
+    UCA_MARGIN,
+    UCA_MARGIN_S,
+    UCA_TOO_EARLY,
     UNTIMED,
     Probe,
     derive_ccd,
@@ -65,12 +69,41 @@ def test_positive_window_ends_where_the_event_starts_for_30_and_60_s():
 
 
 def test_too_little_footage_shortens_the_window_and_flags_it():
-    e = ucf("a.mp4", AnnotationSource.UCA, 45.0, 50.0)
-    windows, _ = derive_ucf_crime([e], {"a.mp4": "train"}, probes_for([e]))
+    e = ucf("a.mp4", AnnotationSource.UCF_CRIME_TEMPORAL, 45.0, 50.0)
+    windows, _ = derive_ucf_crime([e], {"a.mp4": "held_out"}, probes_for([e]))
     by_l = {w.nominal_length_s: w for w in windows}
     assert (by_l[30.0].window_start_s, by_l[30.0].shortened) == (15.0, False)
     assert (by_l[60.0].window_start_s, by_l[60.0].window_end_s, by_l[60.0].length_s) == (0.0, 45.0, 45.0)
     assert by_l[60.0].shortened
+
+
+def test_a_uca_timed_window_ends_8_s_before_the_uca_time_and_keeps_its_length():
+    e = ucf("a.mp4", AnnotationSource.UCA, 45.0, 50.0)
+    windows, skipped = derive_ucf_crime([e], {"a.mp4": "train"}, probes_for([e]))
+    by_l = {w.nominal_length_s: w for w in windows}
+    assert skipped == [] and UCA_MARGIN_S == 8.0
+    assert (by_l[30.0].window_start_s, by_l[30.0].window_end_s, by_l[30.0].shortened) == (7.0, 37.0, False)
+    assert (by_l[60.0].window_start_s, by_l[60.0].window_end_s, by_l[60.0].shortened) == (0.0, 37.0, True)
+    assert all(w.margin_s == 8.0 for w in windows)
+    flags = [ln.rsplit(",", 1)[1] for ln in windows_csv(windows).decode().splitlines()[1:]]
+    assert flags == [UCA_MARGIN, f"{SHORTENED};{UCA_MARGIN}"]
+
+
+def test_official_and_ccd_windows_have_no_margin():
+    e = ucf("a.mp4", AnnotationSource.UCF_CRIME_TEMPORAL, 100.0, 120.0)
+    c = crash("000001", 3.2)
+    windows = derive_ucf_crime([e], {"a.mp4": "held_out"}, probes_for([e]))[0]
+    windows += derive_ccd([c], {c.clip_key: "train"}, probes_for([c], 5.0, 10.0))[0]
+    assert [(w.window_end_s, w.margin_s) for w in windows] == [(100.0, 0.0), (100.0, 0.0), (3.2, 0.0)]
+    assert UCA_MARGIN not in windows_csv(windows).decode()
+
+
+@pytest.mark.parametrize("start", [3.0, 8.0])
+def test_a_uca_event_less_than_8_s_in_gets_no_window(start):
+    e = ucf("a.mp4", AnnotationSource.UCA, start, start + 5)
+    windows, skipped = derive_ucf_crime([e], {"a.mp4": "train"}, probes_for([e]))
+    assert windows == []
+    assert [(k.nominal_length_s, k.reason) for k in skipped] == [(30.0, UCA_TOO_EARLY), (60.0, UCA_TOO_EARLY)]
 
 
 def test_second_interval_is_skipped_and_counted_per_length():

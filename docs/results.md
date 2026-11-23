@@ -2487,3 +2487,35 @@ for the searches tried, not measured); the boxes request, which follows the sear
 umbrella*, k 16: without it, 16 of 16 from one video (top 50: 2 videos); with `per_footage=2`, 8 sources in Scene and 9 in
 Combined. Search step, 20 cached repeats: frame median 16 ms → 65 ms (max 177), fused 72 ms → 148 ms (max 257). The
 NFR-2 run above was before D-44 and without it (the script does not set `per_footage`).
+
+## OMNI-901 · The UCF-Crime windows rebuilt with the UCA margin (D-49) · 2026-11-23
+
+**Conditions:** `uv run python scripts/build_event_windows.py --replace` on the local annotation mirror and the
+committed probes and split, seed 607 (unchanged). Deterministic; one run.
+
+**What changed** (`ucf_crime.csv`, per length, 30 s and 60 s alike):
+
+| Windows | Before | After |
+|---|---|---|
+| Positive, UCA-timed (train + validation) | 540 | **358**, each ending 8 s earlier, flagged `uca_margin` |
+| Positive, official-timed (held-out) | 140 | 140, byte-identical |
+| Negative | 950 | 950, byte-identical |
+| Skipped: UCA event less than 8 s into its video (new reason) | - | 182 |
+
+Positive windows per split, per length: train 301 (was 460), validation 57 (was 80), held-out 140. Every class
+keeps windows in train (fewest: Explosion 5, Abuse 12); validation has Shooting 1, Shoplifting 2, Vandalism 2, Explosion 2. Shortened
+positives: 309 at 30 s, 402 at 60 s.
+
+**Files:**
+
+| File | Rows | SHA-256 |
+|---|---|---|
+| `datasets/windows/ucf_crime.csv` | 2,896 (was 3,260) | `022524afaec33355b42678812d1057444d2e41abc4d3eb306f77f031027e0370` (was `9115e1af…`) |
+| `datasets/windows/ucf_crime_skipped.csv` | 936 (was 572) | `2e347ae13a2de395f087b1bce0ebca07ef26a9bf1baa87fe3534a8d349a35162` (was `d8c85c4d…`) |
+| `datasets/windows/ccd.csv`, `ccd_skipped.csv` | 4,500, 0 | unchanged |
+
+**Checked:** every held-out and negative row equal to the committed file field for field (2,180 of 2,180); every
+kept UCA row ends exactly 8 s before its old end and carries the flag (716 of 716). The hand-check sample still
+redraws byte for byte.
+
+**Not covered:** whether the margin is right on footage not yet checked: the re-check below.

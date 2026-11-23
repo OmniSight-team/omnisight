@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 from omnisight_common.datasets import ccd, ucf_crime
-from omnisight_common.datasets.hand_check import SAMPLERS, sample_csv
+from omnisight_common.datasets.hand_check import SAMPLERS, sample_csv, windowed_clips
 
 ROOT = Path(__file__).resolve().parents[3]
 LOADERS = {"ucf_crime": ucf_crime.load, "ccd": ccd.load}
@@ -28,8 +28,7 @@ def drawn():
     picked, split = {}, {}
     for d, load in LOADERS.items():
         split[d] = {r[0]: r[2] for r in rows(ROOT / "datasets" / "splits" / f"{d}.csv")}
-        windowed = {r[0] for r in rows(ROOT / "datasets" / "windows" / f"{d}.csv") if r[2] == "positive"}
-        picked[d] = SAMPLERS[d](load(ROOT / "data" / d), windowed)
+        picked[d] = SAMPLERS[d](load(ROOT / "data" / d), windowed_clips(ROOT / "datasets" / "windows", d))
     return picked, split
 
 

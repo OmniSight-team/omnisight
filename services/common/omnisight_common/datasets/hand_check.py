@@ -13,8 +13,10 @@ needs to play them. Deterministic: seed 609, inputs sorted before any random dra
 
 import random
 from collections import defaultdict
+from pathlib import Path
 
 from omnisight_common.datasets import AnnotationSource, ManifestEntry
+from omnisight_common.datasets.windows import UCA_TOO_EARLY
 
 SEED = 609
 UCF_PER_SOURCE = 15
@@ -56,6 +58,17 @@ def sample_ccd(entries: list[ManifestEntry], windowed: set[str]) -> list[Manifes
 
 
 SAMPLERS = {"ucf_crime": sample_ucf_crime, "ccd": sample_ccd}
+
+
+def windowed_clips(windows_dir: Path, dataset: str) -> set[str]:
+    """The clips that had positive windows when the sample was drawn (OMNI-607): those with
+    one now, plus those that lost theirs to D-49's UCA margin. Keeps the sample redrawable."""
+
+    def rows(name: str) -> list[list[str]]:
+        return [ln.split(",") for ln in (windows_dir / name).read_text(encoding="utf-8").splitlines()[1:]]
+
+    now = {r[0] for r in rows(f"{dataset}.csv") if r[2] == "positive"}
+    return now | {r[0] for r in rows(f"{dataset}_skipped.csv") if r[5] == UCA_TOO_EARLY}
 
 
 def sample_csv(picked: dict[str, list[ManifestEntry]], split: dict[str, dict[str, str]]) -> bytes:
