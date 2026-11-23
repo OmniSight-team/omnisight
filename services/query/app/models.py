@@ -2,6 +2,9 @@ from datetime import datetime
 
 from omnisight_common import (
     AdmissionReason,
+    AlertSeverity,
+    AlertSource,
+    AlertStatus,
     CameraStatus,
     Domain,
     Role,
@@ -366,3 +369,45 @@ class EventWindow(Base):
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Why the hand check marked it wrong (OMNI-609); NULL when verified or not checked.
     verify_reason: Mapped[str | None] = mapped_column(String)
+
+
+class Alert(Base):
+    """An alert raised on footage (OMNI-907): by a rule (slice 9) or by the PFM (slice 10). The plan's
+    data model plus `video_id` (a model alert can be on an added video, not a camera) and `assigned_to`.
+    Reviewing it (confirm or dismiss) is recorded with who and when, once."""
+
+    __tablename__ = "alerts"
+    __table_args__ = (
+        # On a camera or on a video, never both and never neither.
+        CheckConstraint("(camera_id IS NULL) <> (video_id IS NULL)", name="ck_alerts_camera_or_video"),
+        # A reviewed alert says when; a new one has no review. (Who is SET NULL if that user is deleted.)
+        CheckConstraint("(status = 'new') = (reviewed_at IS NULL)", name="ck_alerts_review_recorded"),
+        Index("ix_alerts_status_raised_at", "status", "raised_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # No ondelete, as on segments: a camera with history is disabled, not deleted.
+    camera_id: Mapped[int | None] = mapped_column(ForeignKey("cameras.id"), index=True)
+    # A deleted video takes its alerts with it, as it takes its segments.
+    video_id: Mapped[int | None] = mapped_column(ForeignKey("videos.id", ondelete="CASCADE"), index=True)
+    # The frame the alert points at (its thumbnail and moment). SET NULL: pruning old live
+    # frames (slice 16) must not delete the decision made on them.
+    segment_id: Mapped[int | None] = mapped_column(ForeignKey("segments.id", ondelete="SET NULL"))
+    event_type: Mapped[str] = mapped_column(String, nullable=False)
+    # The PFM's max(p); NULL on a rule alert.
+    confidence: Mapped[float | None] = mapped_column(Float)
+    # The PFM's time to the event when it was raised; NULL on a rule alert.
+    expected_in_s: Mapped[float | None] = mapped_column(Float)
+    severity: Mapped[AlertSeverity] = mapped_column(_enum_column(AlertSeverity, "alert_severity"), nullable=False)
+    status: Mapped[AlertStatus] = mapped_column(
+        _enum_column(AlertStatus, "alert_status"), nullable=False, default=AlertStatus.NEW, server_default="new"
+    )
+    source: Mapped[AlertSource] = mapped_column(_enum_column(AlertSource, "alert_source"), nullable=False)
+    # A rule's one-line reason now; the verification cascade's trace from slice 12.
+    reasoning: Mapped[str | None] = mapped_column(String)
+    # The cascade's last tier (slice 12); NULL until then.
+    tier_reached: Mapped[int | None] = mapped_column(Integer)
+    raised_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    assigned_to: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

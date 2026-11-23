@@ -27,7 +27,7 @@ OPERATOR_EMAIL = "tc10-operator@omnisight.local"
 # Every route gated by get_current_user or require_role. /auth/login isn't
 # here — it's the public entry point, not a protected route. /health isn't
 # either — it's deliberately public.
-PROTECTED_GET_ROUTES = ["/auth/me", "/nav", "/admin/ping", "/cameras", "/videos"]
+PROTECTED_GET_ROUTES = ["/auth/me", "/nav", "/admin/ping", "/cameras", "/videos", "/alerts", "/alerts/unread_count"]
 
 
 @pytest.fixture(scope="module", autouse=True)

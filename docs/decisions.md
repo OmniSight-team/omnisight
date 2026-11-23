@@ -53,6 +53,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-45 | The upload limit is raised from 500 MB to 2,048 MB, for the demo set; the 900 s extraction timeout stays | 2026-11-08 | Done |
 | D-47 | A video is known by its fingerprint (SHA-256 of the file); Colab's ready folders are added by a host script, not a mount | 2026-11-20 | Done |
 | D-49 | UCA-timed UCF-Crime windows end 8 s before the UCA time (K-20); the windows are rebuilt once for it. Revises D-24 | 2026-11-23 | Done |
+| D-51 | The alerts inbox: three severity levels, "unread" is "not reviewed yet", a review is final, and only operators and analysts review or assign | 2026-11-23 | Done |
 
 ---
 
@@ -1224,3 +1225,28 @@ the Drive copy. For each clip the checker writes the second where the act visibl
 tolerance) before the window's end. D-27's "ends too early" no longer applies: the window ends 8 s early on purpose.
 Also reported, to compare with OMNI-609's 10 of 15: whether the UCA time itself is within 1.5 s of the act.
 `scripts/uca_recheck.py report` computes both.
+
+## D-51 · The alerts inbox: severity, unread, one review, who may review · 2026-11-23
+
+**Why:** OMNI-907 builds the plan's `alerts` table and API. The plan names the columns and routes but leaves four
+things open; they are fixed here, before the rule detector (OMNI-908) and the page (OMNI-909) rely on them.
+D-50 is OMNI-X14's (the Cosmos experiment, not decided yet).
+
+- **Severity is `low`, `medium` or `high`.** Phase A attaches "an estimated severity" (§3.5.5, from the VLM in
+  slice 12) without a scale. Three levels are enough to sort and filter an inbox; OMNI-911 sets them from the
+  confidence and the event type by a short fixed table
+- **"Unread" means not reviewed yet** (`status = new`). The plan's `GET /alerts/unread_count` has no per-user
+  read state, and adding one is not asked for. The sidebar badge is the inbox's open work, the same for every user
+- **A review is final.** Confirm or dismiss only a `new` alert; a second decision is refused (409), so the
+  stored reviewer and time are always the one decision made. The row is locked while it is decided, so two
+  reviewers at once cannot both win. Assigning works only on a `new` alert, and only to an active operator or
+  analyst (422 otherwise); assigning again replaces the assignee
+- **Who may do what** (NFR-7): reading the inbox and the count is open to every role that has the Alerts screen in
+  `/nav` (operator, analyst, admin); confirming, dismissing and assigning only to operators and analysts, as the
+  ticket says. Admin gets 403 on those: administration is not review
+
+**Beyond the plan's columns:** `video_id` and `assigned_to` (the ticket's), and exactly one of `camera_id` or
+`video_id` (a check in the table). A deleted video takes its alerts with it; a camera with alerts is disabled,
+not deleted, as with segments; `segment_id` is set to NULL if its frame is pruned, so the decision stays.
+"Soonest expected" sorts by the moment the event is expected, `raised_at + expected_in_s`, not by the bare
+`expected_in_s`, which is only true at the moment the alert was raised.
