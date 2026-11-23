@@ -71,9 +71,9 @@ Otherwise keep InternVideo2 (D-33), and OMNI-902 starts with it. Either way the 
 
 ### Decide
 
-- [ ] Apply the rule above. Record the decision (**D-49**): switch or keep, with the numbers.
-      If switching, it replaces D-33 for the clip stream. (This moves the sprint's decisions
-      to start at D-50.)
+- [ ] Apply the rule above. Record the decision (**D-50**): switch or keep, with the numbers.
+      If switching, it replaces D-33 for the clip stream. (D-49 is OMNI-901's UCA margin; the
+      sprint's later decisions start at D-51.)
 - [ ] Tell Ahmad the result in two lines before OMNI-902 starts
 
 ---
