@@ -142,3 +142,21 @@ def test_the_timing_sample_is_the_runners_first_clips(source, tmp_path):
 
     assert [[int(f[0, 0, 0]) for f in c] for c in clips] == encoder.clips[:5]
     assert cosmos.time_per_clip(lambda batch: np.zeros((len(batch), 768)), clips, batch=2) >= 0
+
+
+class TextStandIn:
+    def encode_texts(self, texts):
+        return np.stack([helpers._unit(t.encode(), cosmos.COSMOS_DIM) for t in texts])
+
+
+def test_the_cosmos_process_hands_its_text_vectors_to_the_main_process(tmp_path):
+    texts = cosmos.query_texts(ROOT)
+    assert len(texts) == 100  # 50 tuning queries, then SM-1's 50
+
+    cosmos.write_texts(TextStandIn(), texts, tmp_path / "texts.npz")
+    stored = cosmos.StoredTexts(tmp_path / "texts.npz")
+
+    picked = [texts[3], texts[77]]
+    assert np.array_equal(stored.encode_texts(picked), TextStandIn().encode_texts(picked))
+    with pytest.raises(KeyError, match="not encoded"):
+        stored.encode_texts(["a query nobody encoded"])

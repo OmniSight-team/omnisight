@@ -19,6 +19,13 @@ Output, one folder per spacing, one file per video, `{out}/{clip_key}.npz`: the 
 768-D Cosmos vectors. `{out}/manifest.json` is rewritten after every video with the pins and
 each video's decode and GPU seconds; a rerun skips what is done, so a lost session resumes.
 
+**Two processes, two transformers versions.** Cosmos-Embed1's code was written for transformers
+4.51.3 and does not run on the repo's 5.20.1 (removed helpers, then a changed weight setup). SigLIP 2's
+query vectors must be made as SM-1 made them, on 5.20.1. So Cosmos runs on its own, with 4.51.3 first on
+its path, through this file's command line (`cosmos`): the GPU timing, both spacings, and the text
+vectors of the tuning and SM-1 queries (`{out_root}/texts.npz`). The notebook's main process keeps
+5.20.1 for SigLIP 2 and InternVideo2 and reads Cosmos's text vectors from that file (`StoredTexts`).
+
 The fusion weights for Cosmos are chosen as D-40 chose InternVideo2's (`tune`, the tuning
 queries only, `tune_fusion.grid`), then SM-1 is measured with them.
 
@@ -73,6 +80,7 @@ class CosmosEncoder:
     def __init__(self, model_dir: Path, device: str = "cuda", dtype=None) -> None:
         import torch
         from transformers import AutoModel, AutoProcessor
+
 
         self.device = device
         self.dtype = dtype or torch.bfloat16
@@ -298,3 +306,96 @@ def tune(dev_queries, archive, frame_text, clip_text, classifier, sm1, tune_fusi
         "best": best,
         "grid": grid,
     }
+
+
+TEXTS = "texts.npz"
+TIMING = "timing_cosmos.json"
+QUERY_FILES = ("sm1_dev_queries.csv", "sm1_queries.csv")
+
+
+def query_texts(repo: Path) -> list[str]:
+    """Every tuning and SM-1 query's text, in file order (read without omnisight_common, which
+    the Cosmos process does not install)."""
+    import csv
+
+    texts = []
+    for name in QUERY_FILES:
+        with open(repo / "datasets" / "eval" / name, newline="", encoding="utf-8") as f:
+            texts += [row["text"] for row in csv.DictReader(f)]
+    return texts
+
+
+def write_texts(encoder, texts: list[str], out: Path) -> None:
+    np.savez(out, texts=np.array(texts), vectors=encoder.encode_texts(texts))
+
+
+class StoredTexts:
+    """`encode_texts` from the file the Cosmos process wrote: for `measure_sm1` and `tune` in the
+    main process. A text that was not encoded is an error, never a silent zero."""
+
+    def __init__(self, path: Path) -> None:
+        with np.load(path) as data:
+            self.vectors = {str(t): v for t, v in zip(data["texts"], data["vectors"], strict=True)}
+
+    def encode_texts(self, texts) -> np.ndarray:
+        missing = [t for t in texts if t not in self.vectors]
+        if missing:
+            raise KeyError(f"not encoded by the Cosmos process: {missing[:3]}")
+        return np.stack([self.vectors[t] for t in texts])
+
+
+def main() -> int:
+    """`cosmos`: everything Cosmos does, in its own process (transformers 4.51.3 first on the path)."""
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["cosmos"])
+    parser.add_argument("--repo", type=Path, required=True)
+    parser.add_argument("--model-dir", type=Path, required=True)
+    parser.add_argument("--videos", type=Path, required=True)
+    parser.add_argument("--source", type=Path, required=True, help="the InternVideo2 archive")
+    parser.add_argument("--out-root", type=Path, required=True, help="one folder per spacing goes here")
+    parser.add_argument("--pins", required=True, help="the new archives' pins, as JSON")
+    parser.add_argument("--session", default="")
+    args = parser.parse_args()
+
+    import torch
+    import transformers
+
+    sys.path.insert(0, str(args.repo / "services" / "ai_workers"))
+    sys.path.insert(0, str(args.repo / "scripts"))
+    import encode_virat_archive as archive_runner
+    from app import (
+        clip_encoder as window,  # ai_workers' window functions (torch, safetensors only)
+    )
+
+    print(f"transformers {transformers.__version__}, torch {torch.__version__}, {torch.cuda.get_device_name(0)}", flush=True)
+    encoder = CosmosEncoder(args.model_dir, device="cuda")
+    print(f"Cosmos loaded: {sum(p.numel() for p in encoder.model.parameters()):,} parameters", flush=True)
+    keys = archive_runner.evaluation_keys(args.repo)
+    args.out_root.mkdir(parents=True, exist_ok=True)
+
+    write_texts(encoder, query_texts(args.repo), args.out_root / TEXTS)
+    print(f"text vectors of {len(query_texts(args.repo))} queries -> {args.out_root / TEXTS}", flush=True)
+
+    timed = {}
+    for spacing, span in SPACINGS.items():
+        clips = sample_clips(args.videos / f"{keys[0]}.mp4", args.source, keys[0], window, span, 64)
+        timed[spacing] = time_per_clip(encoder.encode_clips, clips)
+        print(f"Cosmos {spacing}: {timed[spacing]:.1f} ms per clip (64 clips of {keys[0]}, batches of {BATCH})", flush=True)
+        del clips
+    _write_json(args.out_root / TIMING, {"timed_video": keys[0], "clips": 64, "batch": BATCH, "ms_per_clip": timed,
+                                         "transformers": transformers.__version__, "dtype": "bfloat16"})
+
+    pins = json.loads(args.pins)
+    for spacing, span in SPACINGS.items():
+        print(f"=== encode {spacing}", flush=True)
+        manifest = run(keys, args.videos, args.source, args.out_root / spacing, encoder, window, pins,
+                       span_s=span, session=args.session, log=lambda m: print(m, flush=True))
+        print("failed:", manifest["failed"], timing(args.out_root / spacing), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

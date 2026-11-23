@@ -52,6 +52,22 @@ action queries (K-30), should be replaced.
   at 0 s); a folder holds one spacing; the timing sample is the runner's own first clips
 - `scripts/tests/test_measure_sm1.py`: a new test shows `weights` and `depth` reach `fused` only. 30 + 6 tests pass
 
+- **2026-11-23, part 2: Cosmos does not run on the repo's transformers.** Ahmad's first Colab run stopped in
+  step 2: Cosmos's `modeling_qformer.py` imports `find_pruneable_heads_and_indices`, which transformers 5 removed.
+  Checked every `transformers` import of Cosmos's seven code files at the pinned revision against 5.20.1: that one
+  name, plus two model methods its Q-Former calls on every forward (`get_head_mask`, `invert_attention_mask`).
+  Restoring the three with transformers 4.x's code then failed deeper, inside transformers 5's own weight setup
+  (`all_tied_weights_keys`), building the full model with random weights on the laptop's CPU. Patching transformers
+  5's internals was dropped
+- **Two processes instead.** The same CPU check with transformers 4.51.3 (the version Cosmos's config was saved
+  with) in an environment of its own: the full model built (1,173,904,191 parameters, random weights, BF16), one clip
+  gave a 768-D unit vector (326 s on the CPU) and two texts unit vectors: the code path runs. So Cosmos runs in a
+  process of its own on Colab, with transformers 4.51.3 installed `--no-deps` into `/content/cosmos_env` and first
+  on its path (`encode_virat_cosmos.py cosmos`): the 100 queries' text vectors (`texts.npz`), its GPU time in both
+  spacings, both archives. The notebook's process keeps 5.20.1 for SigLIP 2 and InternVideo2, so the query vectors
+  on the frame side are made exactly as in SM-1's run, times InternVideo2 on the same 64 clips, and reads Cosmos's
+  text vectors from the file (`StoredTexts`, which refuses a text it was not given). A new test covers the hand-over
+
 ### Not verified
 
 - Nothing has run on the GPU yet. Whether Cosmos's own code loads with the repo's transformers 5.20.1 (its config
