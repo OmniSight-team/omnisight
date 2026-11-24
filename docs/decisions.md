@@ -56,6 +56,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-50 | The clip encoder stays InternVideo2_CLIP_S (D-33): Cosmos-Embed1-336p tested on SM-1 (OMNI-X14) and did not meet the rule written before the run | 2026-11-23 | Done |
 | D-51 | The alerts inbox: three severity levels, "unread" is "not reviewed yet", a review is final, and only operators and analysts review or assign | 2026-11-23 | Done |
 | D-52 | The rule detector: Algorithm 1 records which cells moved (recorded, not decided on); a run of motion, one alert per run; each rule's own pause; severities; settings on the camera | 2026-11-23 | Done |
+| D-54 | The PFM's clip vectors on a fixed time grid: every 0.5 s on CCD, 1 s on UCF-Crime, anchored at each window's last frame; Algorithm 2's 1 s clip at each point | 2026-11-24 | Done |
 
 ---
 
@@ -1312,3 +1313,25 @@ drawing on screen in this sprint (the ticket). In `pfm`: look every 2 s, read ba
 
 **Where it runs:** `services/pfm`, its package named `pfm` (not `app`, so its tests share one run with the other
 services'), no host port. It writes `alerts` rows with raw SQL against the tables `query`'s migrations own.
+
+## D-54 · The PFM's clip vectors on a fixed time grid · 2026-11-24
+
+**Why a grid, not the gate's frames:** Algorithm 4 reads a sequence of clip vectors ending at `t`. The gate keeps
+frames at uneven times (motion, heartbeats), so a sequence of kept frames would mean a different time span each
+time, and how much of it is motion would leak into the input. On a fixed grid every sample covers the same time
+at the same spacing, in training and when served (OMNI-910 reads the same grid).
+
+**The steps:** CCD every **0.5 s** (Δ, the gate's own interval): its footage before an accident is 3.0-4.9 s (D-23),
+so 0.5 s gives 6-10 vectors per sample. UCF-Crime every **1 s** (OMNI-902's ticket): its windows are 30 and 60 s, so
+30-60 vectors, and half the encoding of 0.5 s.
+
+**Anchored at each window's last frame,** the last frame before the window's end (on a positive, before the event
+starts), then back by the step: the latest sample is as close to the event as the footage allows (CCD: `τ` 0.1 s),
+and the grid never reads a frame of the event itself. Back to the video's start on CCD (the PFM reads all the footage
+before `t`); on UCF-Crime to the window's start minus its length.
+
+**The clip at a grid point** is Algorithm 2's: 8 evenly spaced frames from the 1 s before `t`, through ai_workers'
+own `window_span` and `uniform_indices`, cut at 0 s at a video's start (a short span pads with its last frame).
+
+`scripts/encode_pfm_windows.py`; CCD: 39,233 clips per encoder.
+
