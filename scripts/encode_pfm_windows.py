@@ -32,8 +32,10 @@ import json
 import math
 import os
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from itertools import islice
 from pathlib import Path
 
 import numpy as np
@@ -42,6 +44,8 @@ CLIP_SPAN_S = 1.0  # Algorithm 2's clip, [t - 2Δ, t] with Δ = 0.5 s
 STEPS_S = {"ccd": 0.5, "ucf_crime": 1.0}
 BATCH = 16
 CHUNK_CLIPS = 128  # clips decoded before they are encoded, across videos
+READERS = 8  # videos decoded at once
+AHEAD = 16  # videos decoded ahead of the encoder at most (UCF-Crime: about 100 MB of frames each)
 MANIFEST = "manifest.json"
 
 
@@ -204,20 +208,33 @@ def run(
             f"{1000 * timed.seconds / max(timed.clips, 1):.0f} ms per clip in the encoder, "
             f"about {(len(todo) - done_now) / max(rate, 1e-9) / 60:.0f} min to go")
 
-    for key in todo:
+    def read(key: str):
         rows = windows[key]
         try:
             fps_expected = float(rows[0]["fps"])
             frames = grid_frames(rows, fps_expected, step_s, context_s)
-            video_clips, fps, decoded = read_clips(data_dir / rows[0]["video_relpath"], frames, window, fps_expected)
+            return key, frames, *read_clips(data_dir / rows[0]["video_relpath"], frames, window, fps_expected), None
         except Exception as exc:  # noqa: BLE001
-            manifest["failed"][key] = f"read: {type(exc).__name__}: {exc}"
-            log(f"{key}: FAILED {manifest['failed'][key]}")
-            continue
-        pending.append((key, frames, fps, decoded, len(video_clips)))
-        clips.extend(video_clips)
-        if len(clips) >= CHUNK_CLIPS:
-            flush()
+            return key, None, None, None, None, exc
+
+    # Videos are decoded by READERS threads, up to AHEAD videos before the encoder (OpenCV releases
+    # the GIL), and taken in `todo`'s order, so the output is the same as one by one.
+    with ThreadPoolExecutor(READERS) as pool:
+        upcoming = iter(todo)
+        queue = deque(pool.submit(read, key) for key in islice(upcoming, AHEAD))
+        while queue:
+            key, frames, video_clips, fps, decoded, exc = queue.popleft().result()
+            following = next(upcoming, None)
+            if following is not None:
+                queue.append(pool.submit(read, following))
+            if exc is not None:
+                manifest["failed"][key] = f"read: {type(exc).__name__}: {exc}"
+                log(f"{key}: FAILED {manifest['failed'][key]}")
+                continue
+            pending.append((key, frames, fps, decoded, len(video_clips)))
+            clips.extend(video_clips)
+            if len(clips) >= CHUNK_CLIPS:
+                flush()
     flush()
     _write_json(out / MANIFEST, manifest)
     return manifest

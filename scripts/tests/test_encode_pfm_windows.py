@@ -153,3 +153,25 @@ def test_a_batch_that_mixes_frame_sizes_is_encoded_per_size_in_order():
     vectors = cosmos.by_frame_size(encode, clips)
 
     assert vectors[:, 0].tolist() == list(range(7)) and len(calls) == 2
+
+
+def test_ucf_crimes_grid_is_one_second_inside_both_windows_only():
+    # D-55: a sequence starts at its window's start, so UCF-Crime needs no footage before its windows.
+    rows = [_row("v", "positive", 40.0, 70.0, fps=30), _row("v", "positive", 10.0, 70.0, fps=30)]
+    frames = runner.grid_frames(rows, 30.0, runner.STEPS_S["ucf_crime"], context_s=0.0)
+    assert frames[-1] == 2099 and frames[0] == 329 and len(frames) == 60  # 69.97 s back to 10.97 s
+    assert set(np.diff(frames)) == {30}
+    negatives = [_row("n", "negative", 5.0, 35.0, fps=30), _row("n", "negative", 100.0, 160.0, fps=30)]
+    assert len(runner.grid_frames(negatives, 30.0, 1.0, context_s=0.0)) == 30 + 60  # two stretches, apart
+
+
+def test_parallel_readers_give_the_same_files_as_one_reader(ccd, monkeypatch):
+    data, windows = ccd
+    runner.run(windows, data, data / "one", StandIn(), window, PINS, 0.5)
+    monkeypatch.setattr(runner, "READERS", 1)
+    monkeypatch.setattr(runner, "AHEAD", 1)
+    runner.run(windows, data, data / "serial", StandIn(), window, PINS, 0.5)
+    for key in windows:
+        with np.load(data / "one" / f"{key}.npz") as a, np.load(data / "serial" / f"{key}.npz") as b:
+            assert np.array_equal(a["vectors"], b["vectors"]) and np.array_equal(a["frame_index"], b["frame_index"])
+

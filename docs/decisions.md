@@ -1350,7 +1350,8 @@ class from the length (the mask) and not from what it sees.
 still all the footage before `t` (its window starts at 0 s); on a normal one it stops at the window's start. D-24
 drew the normal windows' lengths from the crash windows' of the same split, so the lengths now match: every share
 within 0.2 points (`results.md`, OMNI-903). UCF-Crime the same: the 30 s and 60 s windows TC-5 asks for, from
-their start.
+their start. So UCF-Crime's grid needs no footage before its windows: it is encoded with no
+context (`context_s = 0`), not D-54's "the window's start minus its length".
 
 **Not changed:** the grid (D-54) and the vectors already encoded: a window's grid points are a subset of its
 video's grid, so no re-encoding.
