@@ -60,6 +60,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-54 | The PFM's clip vectors on a fixed time grid: every 0.5 s on CCD, 1 s on UCF-Crime, anchored at each window's last frame; Algorithm 2's 1 s clip at each point | 2026-11-24 | Done |
 | D-55 | A PFM sample's sequence starts at its window's start, not the video's (CCD: else length tells the class). Changes OMNI-903's "all the footage before t" | 2026-11-25 | Done |
 | D-56 | The PFM's choices Phase A leaves open: a summary token, positions counted back from t, 2 layers of width 128, softplus Δt, α = 1, one batch per domain per step; X16 measures the last epoch | 2026-11-25 | Done |
+| D-57 | How the PFM is presented: an early warning that tells the operator where to look, not a model that predicts the future; a probability timeline, two levels of claim, chosen clear examples; future work: one big event, reinforcement learning from operators' feedback | 2026-11-25 | Agreed (direction; details at OMNI-906, 912, 913) |
 
 ---
 
@@ -1396,3 +1397,43 @@ transformers process. The rest of the sprint is unchanged.
 **Limit:** CCD did not separate the encoders: both are at its ceiling, and K-35 says why (the clip's look gives the
 class). So this says Cosmos is not needed for CCD, not that InternVideo2 forecasts better. UCF-Crime, where both
 classes are the same kind of footage, was not used: the ticket decided before UCF-Crime is encoded, to encode it once.
+
+## D-57 · How the PFM is presented, and its future work · 2026-11-25
+
+A discussion between Ahmad and Claude, after X16 (D-53, K-35), about what the forecaster is for. Agreed as the
+direction; nothing in the sprint changes because of it. The details are settled in the tickets named below.
+
+**What it is in the product.** An operator watches many cameras. Every second the PFM reads a camera's last 30-60 s
+and gives the likely event, how soon, and how sure (for example *Shoplifting 64%, in about 8 s*). Above the
+threshold, an alert reaches the Alerts page (slice 9's inbox); the operator watches the clip and confirms or
+dismisses it. **Its honest use is attention: which screen to look at now, a few seconds early.** It is a reference
+for the operator, not a guarantee and not a life saver.
+
+**How it is presented (poster, report, demo).** Not "we built a model that predicts the future", but "we built a
+working system that can raise early alerts, measured honestly, and a base for further research".
+
+- **Where it is believable:** events with a visible lead-up: a fight (arguing, pushing before the first punch), a
+  road accident (a car too fast or drifting), robbery or burglary (loitering at a door or till, a masked person
+  coming in), shoplifting (looking around, heading to the exit)
+- **Where it is doubtful, said openly:** many UCF-Crime clips show nothing unusual before the event (the street
+  before an explosion is quiet); the scene can give away the class (a shop camera means Shoplifting), a softer form
+  of K-35, which is risk by place, not forecasting; 13 classes with 19-68 videos each is small, so "something is
+  coming" should work better than "which crime"
+
+**What makes it convincing.**
+1. **A timeline:** one held-out UCF-Crime video, the model's top probability second by second, the event's start
+   marked. It rises before the line, or it does not. One picture explains the idea better than any number
+   (OMNI-906 for the poster's figure, OMNI-912 for the live demo)
+2. **Two levels of claim,** both reported: "something abnormal is coming" (event against Normal: ROC-AUC, lead time)
+   and "which crime" (top-3, SM-2) (OMNI-906)
+3. **3-4 demo examples where the lead-up is visible** (a fight, a road accident), chosen from held-out results, and
+   said plainly that it fails on the quiet ones (OMNI-913)
+
+**Future work** (for the report's future-work section, OMNI-913):
+- **One specific big event or site** (a stadium, a festival, one large event a year): Phase A's cross-domain
+  transfer protocol (§3.5.4.3) already does it: keep the shared backbone, train a fresh head on a small slice of the
+  new site's footage
+- **Reinforcement learning from the operators:** every confirm or dismiss on the Alerts page is a reward. A policy
+  could learn when to alert and when to stay quiet per camera, or which alerts to show first, instead of a fixed
+  threshold. The inbox already collects that feedback
+
