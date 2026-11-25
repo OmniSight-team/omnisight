@@ -72,6 +72,23 @@ def download(model_dir: Path) -> Path:
     return model_dir
 
 
+def by_frame_size(encode, clips) -> np.ndarray:
+    """`encode` once per frame size, the vectors back in the clips' order. A batch is one array, so
+    it holds one size; the processor resizes every size to 336 x 336, so the vectors are the same.
+    A batch of several videos can mix sizes (CCD: a few videos have another resolution)."""
+    sizes = [frames[0].shape for frames in clips]
+    if len(set(sizes)) == 1:
+        return encode(clips)
+    out = None
+    for size in dict.fromkeys(sizes):
+        rows = [i for i, s in enumerate(sizes) if s == size]
+        vectors = encode([clips[i] for i in rows])
+        if out is None:
+            out = np.empty((len(clips), vectors.shape[1]), vectors.dtype)
+        out[rows] = vectors
+    return out
+
+
 class CosmosEncoder:
     """Cosmos-Embed1 as its model card runs it: `AutoModel` and `AutoProcessor` with
     trust_remote_code, BF16 on the GPU. The processor takes BTCHW uint8, resizes to 336 x 336
@@ -90,6 +107,9 @@ class CosmosEncoder:
         self.clips_encoded = 0
 
     def encode_clips(self, clips) -> np.ndarray:
+        return by_frame_size(self._encode_same_size, clips)
+
+    def _encode_same_size(self, clips) -> np.ndarray:
         import torch
 
         for frames in clips:

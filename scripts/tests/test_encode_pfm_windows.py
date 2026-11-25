@@ -138,3 +138,18 @@ def test_the_ccd_windows_file_makes_a_grid_for_every_video():
     assert len(windows) == 4500 and all(len(rows) == 1 for rows in windows.values())
     clips = sum(len(runner.grid_frames(rows, 10.0, runner.STEPS_S["ccd"])) for rows in windows.values())
     assert 30_000 < clips < 45_000, clips
+
+def test_a_batch_that_mixes_frame_sizes_is_encoded_per_size_in_order():
+    # CCD: a few videos have another resolution, and a batch spans videos (X16's 84 failed videos).
+    cosmos = _load("encode_virat_cosmos", ROOT / "scripts" / "encode_virat_cosmos.py")
+    small, large = np.zeros((4, 6, 3), np.uint8), np.zeros((8, 10, 3), np.uint8)
+    clips = [[small + i] * 8 if i % 3 else [large + i] * 8 for i in range(7)]
+    calls = []
+
+    def encode(batch):  # one array per call, as Cosmos's processor needs
+        calls.append(np.stack([np.stack(f) for f in batch]).shape)
+        return np.array([[float(f[0][0, 0, 0])] for f in batch], np.float32)
+
+    vectors = cosmos.by_frame_size(encode, clips)
+
+    assert vectors[:, 0].tolist() == list(range(7)) and len(calls) == 2

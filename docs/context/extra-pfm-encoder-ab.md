@@ -39,3 +39,13 @@ before UCF-Crime is encoded.
 ### Not verified
 
 - Nothing on the GPU yet; the Cosmos command line runs only in the 4.51.3 process, not on the laptop
+
+### The Cosmos run, first pass (2026-11-24, L4)
+
+4,416 of 4,500 videos done, 84 failed, all `encode: ValueError: all input arrays must have the same shape`.
+A few CCD videos have another resolution, and a batch holds clips of several videos (X14's batches held one
+video each, so it never met this). Cosmos's encoder stacks a batch into one array; InternVideo2 resizes per frame
+and was not affected. Fix: `by_frame_size` in `encode_virat_cosmos.py` encodes a mixed batch once per frame size,
+the vectors back in order (the processor resizes every size to 336 x 336, so the vectors are the same). Test:
+`test_a_batch_that_mixes_frame_sizes_is_encoded_per_size_in_order`. 397.5 ms per clip on the L4 for the 4,416.
+
