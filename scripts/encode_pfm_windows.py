@@ -219,6 +219,10 @@ def run(
 
     # Videos are decoded by READERS threads, up to AHEAD videos before the encoder (OpenCV releases
     # the GIL), and taken in `todo`'s order, so the output is the same as one by one.
+    # cv2 is imported here, once, before the threads: a first import racing in 8 threads can hand a
+    # thread the half-loaded module ("module 'cv2' has no attribute 'VideoCapture'", OMNI-902's rerun).
+    import cv2  # noqa: F401
+
     with ThreadPoolExecutor(READERS) as pool:
         upcoming = iter(todo)
         queue = deque(pool.submit(read, key) for key in islice(upcoming, AHEAD))
