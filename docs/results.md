@@ -2596,3 +2596,24 @@ every split), D-54's grid (0.5 s, back to 0 s), Algorithm 2's clip, batches of 1
 
 **Not covered:** an A100 for this run (the ticket's 2 h estimate was for one); decoding time; repeat runs.
 
+## OMNI-903 · CCD's PFM samples · 2026-11-25
+
+`scripts/pfm_samples.py build ccd` → `datasets/samples/ccd.csv`, 35,161 samples, 2,679,481 bytes, SHA-256
+`c71e61e0d748978b16c51cdc19ff2c4f1638b85c9192a592b902717d19bf492a`. A sample at every grid point (0.5 s, D-54)
+inside a window, its sequence from the window's start (D-55). The same file for both encoders.
+
+| Split | Crash samples (videos) | Normal samples (videos) |
+|---|---|---|
+| Train | 8,082 (1,032) | 16,451 (2,100) |
+| Validation | 1,750 (225) | 3,541 (450) |
+| Held-out | 1,874 (243) | 3,463 (450) |
+| **All** | **11,706 (1,500)** | **23,455 (3,000)** |
+
+- Sequence length 1 to 10 vectors. Share per length, Crash against Normal: 1-6 vectors 12.8% each in both; 7: 10.8
+  against 10.8; 8: 7.0 against 6.9; 9: 3.9 against 4.0; 10: 1.5 against 1.5. With the whole footage before `t`
+  (the ticket's wording), 1 vector would have been 12.8% against 3.1% and 10 vectors 1.5% against 6.3% (D-55)
+- `τ` on crash samples 0.1 s to 4.6 s; every sample in its video's split (D-22, checked against
+  `datasets/splits/ccd.csv`)
+
+**Not covered:** UCF-Crime's samples (after its encoding, OMNI-902).
+

@@ -49,3 +49,31 @@ and was not affected. Fix: `by_frame_size` in `encode_virat_cosmos.py` encodes a
 the vectors back in order (the processor resizes every size to 336 x 336, so the vectors are the same). Test:
 `test_a_batch_that_mixes_frame_sizes_is_encoded_per_size_in_order`. 397.5 ms per clip on the L4 for the 4,416.
 
+### OMNI-903 · CCD's samples (2026-11-25)
+
+**Why:** both encoders' models must train on exactly the same samples, so the only difference is the vectors.
+
+**What was done**
+- `scripts/pfm_samples.py`: a sample at every grid point inside a window (positives: every distance to the
+  accident; negatives: every point of the normal window), its class, its split and, on a crash, `τ = event_start -
+  t`. UCA-timed UCF-Crime windows measure `τ` to 8 s after their end (D-49), ready for UCF-Crime
+- **Detour, before building:** the ticket says CCD's sequence is "all the footage before `t`". Counted first: every
+  crash window starts at 0 s, normal windows later, so the lengths would give away the class (1 vector: 12.8% of
+  crash samples, 3.1% of normal). The sequence starts at the window's start instead (D-55); the lengths then match.
+  Nothing re-encoded: a window's grid points are a subset of its video's
+- `datasets/samples/ccd.csv` committed (frames only, no vectors), as D-26 keeps the split and window files
+- `Store`: reads each video's grid vectors once from an encoder's folder (about 120 MB for Cosmos's 39,233 x 768,
+  not copied per sample) and pads a batch at the end with a mask
+
+**Verification performed**
+- `scripts/tests/test_pfm_samples.py`, 5 tests: a crash window's samples, lengths and `τ`; a normal window's sequence
+  starts at its window, not at the video's grid; the UCA margin in `τ`; the store's sequences, padding, mask and
+  its refusals; the committed file is the build, every sample in its video's split, the length shares within 0.5
+  point between classes
+- **Real vectors:** `check ccd` against InternVideo2's folder on Drive (read from this laptop through Google Drive
+  for desktop, 59 min for 4,500 files): all 35,161 samples found as consecutive grid vectors, 39,233 vectors of
+  512-D, all unit length
+
+**Not verified:** the same check on Cosmos's folder (another hour through Drive here; it runs on Colab when the
+models train, OMNI-904)
+

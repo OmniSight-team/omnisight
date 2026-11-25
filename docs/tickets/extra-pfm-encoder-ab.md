@@ -58,7 +58,7 @@ Held-out data is not touched.
     transformers 4.51.3, exactly as X14 ran it (D-50)
 - [x] Cached separately on Drive (`embeddings/pfm/ccd/internvideo2/`, `.../cosmos/`),
       resumable; time per clip for each
-- [ ] OMNI-903's samples for CCD, built once per encoder from the same windows, so the only
+- [x] OMNI-903's samples for CCD, built once per encoder from the same windows, so the only
       difference is the vectors
 
 ### Wed 25 Nov · the same model, trained twice

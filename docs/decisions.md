@@ -57,6 +57,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-51 | The alerts inbox: three severity levels, "unread" is "not reviewed yet", a review is final, and only operators and analysts review or assign | 2026-11-23 | Done |
 | D-52 | The rule detector: Algorithm 1 records which cells moved (recorded, not decided on); a run of motion, one alert per run; each rule's own pause; severities; settings on the camera | 2026-11-23 | Done |
 | D-54 | The PFM's clip vectors on a fixed time grid: every 0.5 s on CCD, 1 s on UCF-Crime, anchored at each window's last frame; Algorithm 2's 1 s clip at each point | 2026-11-24 | Done |
+| D-55 | A PFM sample's sequence starts at its window's start, not the video's (CCD: else length tells the class). Changes OMNI-903's "all the footage before t" | 2026-11-25 | Done |
 
 ---
 
@@ -1335,3 +1336,21 @@ own `window_span` and `uniform_indices`, cut at 0 s at a video's start (a short 
 
 `scripts/encode_pfm_windows.py`; CCD: 39,233 clips per encoder.
 
+## D-55 · A PFM sample's sequence starts at its window's start · 2026-11-25
+
+**Why:** OMNI-903's ticket gives CCD's samples "all the footage before `t`". Every CCD crash window starts at 0 s
+(the clip's first frame), but a normal window starts anywhere in `[0, 5 - L]` (D-24). With the whole footage, a
+normal sample has on average more vectors than a crash sample at the same point of its window: one vector is a
+crash in 12.8% of crash samples and 3.1% of normal ones, ten vectors 1.5% against 6.3%. The model could tell the
+class from the length (the mask) and not from what it sees.
+
+**Decision:** a sample's sequence is the grid vectors from its window's start to `t`. On a crash window that is
+still all the footage before `t` (its window starts at 0 s); on a normal one it stops at the window's start. D-24
+drew the normal windows' lengths from the crash windows' of the same split, so the lengths now match: every share
+within 0.2 points (`results.md`, OMNI-903). UCF-Crime the same: the 30 s and 60 s windows TC-5 asks for, from
+their start.
+
+**Not changed:** the grid (D-54) and the vectors already encoded: a window's grid points are a subset of its
+video's grid, so no re-encoding.
+
+`scripts/pfm_samples.py`; `datasets/samples/ccd.csv`.
