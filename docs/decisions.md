@@ -61,6 +61,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-55 | A PFM sample's sequence starts at its window's start, not the video's (CCD: else length tells the class). Changes OMNI-903's "all the footage before t" | 2026-11-25 | Done |
 | D-56 | The PFM's choices Phase A leaves open: a summary token, positions counted back from t, 2 layers of width 128, softplus Δt, α = 1, one batch per domain per step; X16 measures the last epoch | 2026-11-25 | Done |
 | D-57 | How the PFM is presented: an early warning that tells the operator where to look, not a model that predicts the future; a probability timeline, two levels of claim, chosen clear examples; future work: one big event, reinforcement learning from operators' feedback | 2026-11-25 | Agreed (direction; details at OMNI-906, 912, 913) |
+| D-58 | A UCF-Crime negative window ends at the video's last decoded frame, not past it: 35 normal videos decode 1-20 frames fewer than their container's duration says; their 54 windows are capped, no other window moves | 2026-11-25 | Done |
 
 ---
 
@@ -1437,3 +1438,19 @@ working system that can raise early alerts, measured honestly, and a base for fu
   could learn when to alert and when to stay quiet per camera, or which alerts to show first, instead of a fixed
   threshold. The inbox already collects that feedback
 
+## D-58 · A negative window ends at the video's last decoded frame · 2026-11-25
+
+**What happened:** OMNI-902's first UCF-Crime run encoded 1,413 of 1,448 videos; 35 failed with "the video ends
+before frames [...]". All are normal videos whose negative window reaches the end of the file. D-24 cut those windows
+from the container's `duration`, but the video stream ends earlier (by 1 to 20 frames, under 0.7 s; most likely an
+audio track or edit list longer than the picture). For all 35, the decoded count equals ffprobe's `nb_frames`.
+
+**What was done:** the measured counts are committed in `datasets/windows/ucf_crime_decoded_frames.csv` (35 rows,
+from the run's errors). The window builder still draws each negative window's position from the duration, as before,
+then caps its end at the end of the last decoded frame (floored to the millisecond) and flags it `shortened`. So the
+seeded draws are unchanged and only those videos' windows move: 54 of 2,896 rows in `datasets/windows/ucf_crime.csv`
+(SHA-256 was `022524af...`, now `29de2d5c...`); CCD and the skipped lists are unchanged. UCF-Crime's grid is now
+82,777 clips (was 82,909).
+
+**Why not `nb_frames` for every video:** by `nb_frames`, 329 videos would end early, but 294 of them decoded past it
+in the run; only the decoder's own count is trusted, and only where it was measured.

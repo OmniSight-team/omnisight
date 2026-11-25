@@ -15,6 +15,10 @@ the predictor sees "30s and 60s sliding windows" (§4.1, TC-5). No dataset ships
   windows of the same split
 - **Duration and fps** come from each video's own probe (`video_probe.csv`, written by
   `scripts/probe_dataset_videos.py`), never assumed
+- **A video that decodes fewer frames than its container's duration** (OMNI-902: 35 UCF-Crime
+  normal videos, by 1-20 frames) is listed with its measured count in
+  `datasets/windows/{dataset}_decoded_frames.csv`. A negative window is drawn as before, then its
+  end is capped at the last decoded frame (and flagged `shortened`), so no other window changes
 - **UCA-timed windows end 8 s earlier** (D-49, K-20): `[event_start - 8 - L, event_start - 8)`,
   flagged `uca_margin`, because UCA's times often fall after the act has begun. The event
   time is `window_end_s + UCA_MARGIN_S` for a flagged window. An event less than 8 s into
@@ -42,6 +46,7 @@ UCA_MARGIN = "uca_margin"
 # hand check (OMNI-609) and UCA's agreement with the official times (OMNI-603), not from a model.
 UCA_MARGIN_S = 8.0
 PROBE_LISTING = "video_probe.csv"
+DECODED_HEADER = "video_relpath,frames_decoded"
 # The rate each dataset's labels are written at: UCF-Crime's official frame numbers (its
 # readme) and CCD's binlabels (one per frame at 10 fps). A video at another rate is reported.
 LABEL_FPS = {"ucf_crime": 30.0, "ccd": 10.0}
@@ -64,6 +69,16 @@ class Probe:
     fps: float
     frames: int | None
     duration_s: float
+    frames_decoded: int | None = None  # measured by decoding, when fewer than the duration says
+
+    @property
+    def end_s(self) -> float:
+        """The last time a window may end at: the container's duration, or, when fewer frames decode,
+        the end of the last decoded frame, floored to the millisecond (so that frame is the window's last)."""
+        duration = _ms(self.duration_s)
+        if self.frames_decoded is None:
+            return duration
+        return min(duration, math.floor(self.frames_decoded / self.fps * 1000) / 1000)
 
 
 @dataclass(frozen=True)
@@ -110,6 +125,22 @@ def read_probes(dataset_dir: Path) -> dict[str, Probe]:
     return out
 
 
+def with_decoded(probes: dict[str, Probe], path: Path) -> dict[str, Probe]:
+    """The probes with each listed video's measured frame count (`{dataset}_decoded_frames.csv`);
+    unchanged when the file does not exist."""
+    if not path.is_file():
+        return probes
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if lines[0] != DECODED_HEADER:
+        raise ValueError(f"{path}: header {lines[0]!r}")
+    out = dict(probes)
+    for ln in lines[1:]:
+        if ln.strip():
+            rel, frames = ln.split(",")
+            out[rel] = Probe(probes[rel].fps, probes[rel].frames, probes[rel].duration_s, int(frames))
+    return out
+
+
 def _probe(probes: dict[str, Probe], e: ManifestEntry) -> Probe:
     p = probes.get(e.video_relpath)
     if p is None:
@@ -152,6 +183,8 @@ def _negative(e: ManifestEntry, split: str, probe: Probe, length: float, nominal
         # Floored to the millisecond so the window never runs past the video's end.
         start = math.floor(rng.random() * (duration - length) * 1000) / 1000
         end, shortened = _ms(start + length), False
+    if end > probe.end_s:  # the draw above stays on the duration, so other windows do not move
+        end, shortened = probe.end_s, True
     return Window(
         clip_key=e.clip_key, video_relpath=e.video_relpath, kind=NEGATIVE, nominal_length_s=nominal,
         window_start_s=start, window_end_s=end, event_class=e.event_class, domain=e.domain, split=split,

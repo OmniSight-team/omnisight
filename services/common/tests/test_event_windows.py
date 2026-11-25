@@ -28,6 +28,7 @@ from omnisight_common.datasets.windows import (
     read_probes,
     skipped_csv,
     windows_csv,
+    with_decoded,
 )
 from omnisight_common.domain import Domain
 
@@ -149,6 +150,20 @@ def test_negative_window_in_a_short_video_is_the_whole_video_flagged():
     assert (by_l[60.0].window_start_s, by_l[60.0].window_end_s, by_l[60.0].shortened) == (0.0, 40.0, True)
 
 
+def test_a_video_that_decodes_fewer_frames_caps_its_negative_windows_and_moves_no_other(tmp_path):
+    normals = [ucf(f"n{i}.mp4", AnnotationSource.NORMAL) for i in range(6)] + [ucf("s.mp4", AnnotationSource.NORMAL)]
+    split = {e.clip_key: "train" for e in normals}
+    probes = probes_for(normals, duration=90.0) | {"videos/s.mp4": Probe(30.0, 740, 24.775)}
+    before = derive_ucf_crime(normals, split, probes)[0]
+    (tmp_path / "d.csv").write_text("video_relpath,frames_decoded\nvideos/s.mp4,740\n", encoding="utf-8")
+    after = derive_ucf_crime(normals, split, with_decoded(probes, tmp_path / "d.csv"))[0]
+    assert [w for w in after if w.clip_key != "s.mp4"] == [w for w in before if w.clip_key != "s.mp4"]
+    capped = [w for w in after if w.clip_key == "s.mp4"]
+    # 740 frames end at 24.6667 s, floored to 24.666: the last frame (739) is the window's last.
+    assert [(w.window_start_s, w.window_end_s, w.shortened) for w in capped] == [(0.0, 24.666, True)] * 2
+    assert with_decoded(probes, tmp_path / "absent.csv") is probes
+
+
 def test_derivation_is_deterministic_and_order_free():
     entries = [ucf(f"n{i}.mp4", AnnotationSource.NORMAL) for i in range(10)]
     entries += [ucf("a.mp4", AnnotationSource.UCA, 80.0, 90.0)]
@@ -204,6 +219,7 @@ LOADERS = {"ucf_crime": ucf_crime.load, "ccd": ccd.load}
 def test_rebuilding_gives_the_committed_files_byte_for_byte(dataset):
     lines = (ROOT / "datasets" / "splits" / f"{dataset}.csv").read_text(encoding="utf-8").splitlines()[1:]
     split = {k: s for k, _, s in (ln.split(",") for ln in lines)}
-    windows, skipped = DERIVERS[dataset](LOADERS[dataset](DATA / dataset), split, read_probes(DATA / dataset))
+    probes = with_decoded(read_probes(DATA / dataset), ROOT / "datasets" / "windows" / f"{dataset}_decoded_frames.csv")
+    windows, skipped = DERIVERS[dataset](LOADERS[dataset](DATA / dataset), split, probes)
     assert (ROOT / "datasets" / "windows" / f"{dataset}.csv").read_bytes() == windows_csv(windows)
     assert (ROOT / "datasets" / "windows" / f"{dataset}_skipped.csv").read_bytes() == skipped_csv(skipped)

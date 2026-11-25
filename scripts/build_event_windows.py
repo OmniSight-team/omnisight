@@ -5,6 +5,8 @@ Inputs, all from the local mirror and the repo:
 - the committed split, `datasets/splits/{dataset}.csv` (D-22): windows take their clip's split
 - each video's probe, `data/{dataset}/video_probe.csv`, made on Drive by
   `scripts/probe_dataset_videos.py` (fps and duration read from every file, never assumed)
+- `datasets/windows/{dataset}_decoded_frames.csv`, if it exists: videos that decode fewer
+  frames than their duration says, measured by OMNI-902's encoding run
 
 Writes `datasets/windows/{dataset}.csv` (one row per window) and
 `datasets/windows/{dataset}_skipped.csv` (one row per event and length that has no window,
@@ -44,6 +46,7 @@ from omnisight_common.datasets.windows import (
     read_probes,
     skipped_csv,
     windows_csv,
+    with_decoded,
 )
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -96,7 +99,7 @@ def main() -> int:
     built = {}
     for dataset, load in LOADERS.items():
         entries = load(DATA / dataset)
-        probes = read_probes(DATA / dataset)
+        probes = with_decoded(read_probes(DATA / dataset), WINDOWS / f"{dataset}_decoded_frames.csv")
         windows, skipped = DERIVERS[dataset](entries, read_split(dataset), probes)
         built[dataset] = (entries, probes, windows, skipped)
 
