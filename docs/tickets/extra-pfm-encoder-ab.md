@@ -63,16 +63,16 @@ Held-out data is not touched.
 
 ### Wed 25 Nov · the same model, trained twice
 
-- [ ] OMNI-904's model (with its overfit and resume proofs), **CCD only**, one config for
+- [x] OMNI-904's model (with its overfit and resume proofs), **CCD only**, one config for
       both encoders; only the input size differs (512 or 768)
-- [ ] 3 seeds each, the same epochs and settings; nothing tuned separately per encoder
-- [ ] On **validation**: ROC-AUC, top-1 accuracy, the error of `Δt` (mean absolute), and the
+- [x] 3 seeds each, the same epochs and settings; nothing tuned separately per encoder
+- [x] On **validation**: ROC-AUC, top-1 accuracy, the error of `Δt` (mean absolute), and the
       lead time at the OMNI-905 threshold rule. Mean and spread over the seeds
-- [ ] Side by side in `results.md`
+- [x] Side by side in `results.md`
 
 ### Decide
 
-- [ ] Apply the rule. Record **D-53**: which encoder the PFM reads, with the numbers
+- [x] Apply the rule. Record **D-53**: which encoder the PFM reads, with the numbers
 - [ ] **If Cosmos wins:**
   - OMNI-902 encodes UCF-Crime with Cosmos only
   - OMNI-910 and OMNI-911: the PFM reads **Cosmos clip vectors** stored for it alone (a third
@@ -83,7 +83,7 @@ Held-out data is not touched.
     them, so an added video can be scored
   - On a GPU machine later (OMNI-X04), live cameras get Cosmos too, in its own container on
     transformers 4.51.3; its GPU time is recorded
-- [ ] **If InternVideo2 stays:** OMNI-902 encodes UCF-Crime with InternVideo2; the rest of the
+- [x] **If InternVideo2 stays:** OMNI-902 encodes UCF-Crime with InternVideo2; the rest of the
       sprint is unchanged
-- [ ] Tell Ahmad the result in two lines before UCF-Crime starts encoding
+- [x] Tell Ahmad the result in two lines before UCF-Crime starts encoding
  

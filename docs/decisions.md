@@ -56,6 +56,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-50 | The clip encoder stays InternVideo2_CLIP_S (D-33): Cosmos-Embed1-336p tested on SM-1 (OMNI-X14) and did not meet the rule written before the run | 2026-11-23 | Done |
 | D-51 | The alerts inbox: three severity levels, "unread" is "not reviewed yet", a review is final, and only operators and analysts review or assign | 2026-11-23 | Done |
 | D-52 | The rule detector: Algorithm 1 records which cells moved (recorded, not decided on); a run of motion, one alert per run; each rule's own pause; severities; settings on the camera | 2026-11-23 | Done |
+| D-53 | The PFM reads InternVideo2 clip vectors: on CCD's validation Cosmos-Embed1 was not ahead (AUC 0.9998 against 1.0000, lead time equal); UCF-Crime is encoded with InternVideo2 | 2026-11-25 | Done |
 | D-54 | The PFM's clip vectors on a fixed time grid: every 0.5 s on CCD, 1 s on UCF-Crime, anchored at each window's last frame; Algorithm 2's 1 s clip at each point | 2026-11-24 | Done |
 | D-55 | A PFM sample's sequence starts at its window's start, not the video's (CCD: else length tells the class). Changes OMNI-903's "all the footage before t" | 2026-11-25 | Done |
 | D-56 | The PFM's choices Phase A leaves open: a summary token, positions counted back from t, 2 layers of width 128, softplus Δt, α = 1, one batch per domain per step; X16 measures the last epoch | 2026-11-25 | Done |
@@ -1375,3 +1376,22 @@ Chosen once, before any result, not tuned (`scripts/pfm_model.py`, `Config`, sav
   would favour whichever encoder's curve is noisier
 - **X16's warning threshold:** the lowest `θ` at which at most 10% of validation's normal windows warn
   (OMNI-905's example rule), the same rule for both encoders
+
+## D-53 · The PFM reads InternVideo2 clip vectors · 2026-11-25
+
+**Why the question:** X14 (D-50) kept InternVideo2 for search, but Cosmos-Embed1's clip vectors alone were better on
+action queries, and the PFM reads clip vectors alone. OMNI-X16 let the forecasting task decide, with a rule written
+before training: Cosmos only if its mean validation AUC beats InternVideo2's by more than the larger seed spread and
+its lead time is not lower; a tie keeps InternVideo2, which the product already runs.
+
+**Result** (`results.md`, OMNI-X16; CCD validation, 3 seeds each, the same samples and config): AUC InternVideo2
+1.0000 (spread 0.0000), Cosmos 0.9998 (spread 0.0003); lead time 3.49 s for both; top-1 0.9992 against 0.9955.
+Cosmos is not ahead. **InternVideo2 stays.**
+
+**What follows:** OMNI-902 encodes UCF-Crime with InternVideo2 only; OMNI-910 and OMNI-911 read the clip vectors
+search already stores; the Colab upload path and a later GPU machine need no third vector set and no second
+transformers process. The rest of the sprint is unchanged.
+
+**Limit:** CCD did not separate the encoders: both are at its ceiling, and K-35 says why (the clip's look gives the
+class). So this says Cosmos is not needed for CCD, not that InternVideo2 forecasts better. UCF-Crime, where both
+classes are the same kind of footage, was not used: the ticket decided before UCF-Crime is encoded, to encode it once.

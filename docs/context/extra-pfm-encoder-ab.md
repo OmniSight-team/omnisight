@@ -106,3 +106,21 @@ models train, OMNI-904)
   tell the source, not the lead-up. Both encoders may tie near 1.0 in X16, which keeps InternVideo2 under the rule
 
 **Not verified:** the proofs and X16 on the GPU (the notebook, next)
+
+### X16 on the GPU, and the decision (2026-11-25)
+
+**What was done:** Ahmad ran `notebooks/pfm_train_gpu.ipynb` on an L4: both folders copied from Drive, the two
+proofs, then 6 trainings of about 30 s each.
+
+**Verification performed**
+- Overfit proof: loss 2.697 to 0.0001 on 32 real samples, all right. Resume proof: identical losses (difference 0)
+- X16: the numbers are in `results.md`. Checked that 3.49 s is the ceiling: the mean `τ` of the 225 validation
+  crash windows' first samples is 3.489 s
+
+**Not verified:** a K-35 control (for OMNI-906)
+
+### Result
+
+**InternVideo2 stays (D-53).** Cosmos's mean AUC 0.9998 against 1.0000, lead time equal: the rule keeps InternVideo2.
+Both encoders are at CCD's ceiling, which confirms K-35: every crash is called in its first half-second. Cosmos is
+not needed; UCF-Crime is encoded with InternVideo2 only.
