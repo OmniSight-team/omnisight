@@ -2578,3 +2578,21 @@ a tie on both. Within 2 s, A fused 78.0% overall (InternVideo2 80.0%), 68.0% on 
 **Not covered:** an L4 (the ticket's GPU): the timing is on an A100, two precisions side by side; Cosmos's text side
 on this laptop's CPU (not needed once kept); a fusion that keeps Cosmos's four action finds (finding one would mean
 choosing on SM-1's queries, now used three times). 50 queries by one author.
+
+## OMNI-X16 · CCD's clip vectors for the PFM, with both encoders · 2026-11-24
+
+Colab, one NVIDIA L4, `notebooks/pfm_windows_gpu.ipynb`; every window of `datasets/windows/ccd.csv` (4,500 videos,
+every split), D-54's grid (0.5 s, back to 0 s), Algorithm 2's clip, batches of 16. Time in the encoder only
+(preparation included, decoding not). One run each.
+
+| Encoder | Videos | Clips | ms per clip | Encoder time |
+|---|---|---|---|---|
+| InternVideo2_CLIP_S (float32, D-33's pin) | 4,500 | 39,233 | 277.7 | 3.03 h |
+| Cosmos-Embed1-336p (BF16, `0e8a28f7`, transformers 4.51.3) | 4,500 | 39,233 | 397.4 | 4.33 h |
+
+- Both match the grid's count (39,233); no failures at the end. Cosmos's first pass failed 84 videos (a batch mixing
+  two frame sizes; fixed, `by_frame_size`), and the rerun encoded only those
+- On the L4 Cosmos is 1.43 times InternVideo2 per clip; on X14's A100 the two were about equal (177 against 186 ms)
+
+**Not covered:** an A100 for this run (the ticket's 2 h estimate was for one); decoding time; repeat runs.
+

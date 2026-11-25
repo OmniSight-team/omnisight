@@ -51,12 +51,12 @@ Held-out data is not touched.
 
 ### Tue 24 Nov · CCD encoded with both encoders (OMNI-902's CCD part)
 
-- [ ] OMNI-902's runner on **every CCD window** (positive and negative, every split), on its
+- [x] OMNI-902's runner on **every CCD window** (positive and negative, every split), on its
       0.5 s grid, the same clip (8 frames from the 1 s before `t`), **twice**:
   - **InternVideo2** (the product's pin, D-33)
   - **Cosmos-Embed1-336p** at X14's pin (`0e8a28f7`), BF16, in its own process with
     transformers 4.51.3, exactly as X14 ran it (D-50)
-- [ ] Cached separately on Drive (`embeddings/pfm/ccd/internvideo2/`, `.../cosmos/`),
+- [x] Cached separately on Drive (`embeddings/pfm/ccd/internvideo2/`, `.../cosmos/`),
       resumable; time per clip for each
 - [ ] OMNI-903's samples for CCD, built once per encoder from the same windows, so the only
       difference is the vectors
