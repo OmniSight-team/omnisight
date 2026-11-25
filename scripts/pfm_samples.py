@@ -11,6 +11,11 @@ start to `t`, its domain, its class and, on a positive, the time to the event `t
   sequences mostly Crash. From the window's start, both classes have the same lengths (D-24 drew the
   negatives' lengths from the positives'). On a crash window the two are the same
 - A sample keeps its source video's split (D-22)
+- **No sample at the event's own first frame:** a window's end is rounded to the millisecond (D-24),
+  so when the event starts on a frame (UCF-Crime's official times are frame numbers), the rounded
+  end can fall just after that frame and the grid's last point is the event's first frame
+  (`tau` 0.0003 s). A positive grid point less than half a frame before the event is dropped;
+  the window's other points are unchanged (32 UCF-Crime samples in 16 videos, none on CCD)
 
 `datasets/samples/{dataset}.csv` is committed: one row per sample, frames only, no vectors. The
 vectors are read from the encoder's folder (`encode_pfm_windows.py`) by `Store`, which keeps each
@@ -58,6 +63,8 @@ def build(windows: dict[str, list[dict]], dataset: str) -> list[dict]:
             fps = float(row["fps"])
             frames = grid_frames([row], fps, step, context_s=0.0)  # this window's grid points
             event = event_start_s(row) if row["kind"] == "positive" else None
+            if event is not None:  # only the last point can be on the event's first frame
+                frames = [f for f in frames if event - f / fps >= 0.5 / fps]
             for i, frame in enumerate(frames):
                 t = frame / fps
                 samples.append({
@@ -99,12 +106,15 @@ def counts(samples: list[dict]) -> dict:
 
 class Store:
     """The samples' vectors: each video's grid vectors read once from an encoder's folder, and per
-    sample the slice of them its sequence is (a window's grid points are consecutive)."""
+    sample the rows of its sequence's frames. A window's grid points are evenly spaced, but not always
+    consecutive rows: a UCF-Crime normal video's 30 s and 60 s windows sit at independent positions,
+    so the video's grid interleaves their points."""
 
     def __init__(self, samples: list[dict], vectors_dir: Path) -> None:
         blocks, offsets, starts = [], {}, 0
-        self.offset = np.empty(len(samples), np.int64)
         self.length = np.array([int(s["length"]) for s in samples], np.int64)
+        self.pointer = np.concatenate([[0], np.cumsum(self.length)])
+        self.rows = np.empty(int(self.pointer[-1]), np.int64)
         frame_rows: dict[str, dict[int, int]] = {}
         for i, s in enumerate(samples):
             key = s["clip_key"]
@@ -114,12 +124,13 @@ class Store:
                 blocks.append(vectors.astype(np.float32))
                 offsets[key], frame_rows[key] = starts, {fr: r for r, fr in enumerate(frames)}
                 starts += len(vectors)
-            rows = frame_rows[key]
-            first, last = rows.get(int(s["start_frame"])), rows.get(int(s["end_frame"]))
-            if first is None or last is None or last - first + 1 != self.length[i]:
-                raise ValueError(f"{s['sample_id']}: frames {s['start_frame']}-{s['end_frame']} are not "
-                                 f"{s['length']} consecutive grid vectors in {key}.npz")
-            self.offset[i] = offsets[key] + first
+            first, last, n = int(s["start_frame"]), int(s["end_frame"]), int(self.length[i])
+            step = (last - first) // (n - 1) if n > 1 else 1
+            sequence = list(range(first, last + 1, step))
+            rows = [frame_rows[key].get(fr) for fr in sequence]
+            if len(sequence) != n or sequence[-1] != last or None in rows:
+                raise ValueError(f"{s['sample_id']}: frames {first}-{last} are not {n} grid vectors in {key}.npz")
+            self.rows[self.pointer[i] : self.pointer[i + 1]] = np.asarray(rows) + offsets[key]
         self.vectors = np.concatenate(blocks)
         self.dim = self.vectors.shape[1]
 
@@ -133,7 +144,7 @@ class Store:
             n = int(self.length[i])
             if n > max_length:
                 raise ValueError(f"sample {i} has {n} vectors, more than {max_length}")
-            x[row, :n] = self.vectors[self.offset[i] : self.offset[i] + n]
+            x[row, :n] = self.vectors[self.rows[self.pointer[i] : self.pointer[i + 1]]]
             mask[row, :n] = True
         return x, mask
 

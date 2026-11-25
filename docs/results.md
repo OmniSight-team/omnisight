@@ -2666,3 +2666,39 @@ Drive; vectors in `embeddings/pfm/ucf_crime/internvideo2/`.
 - Encoder time only (the GPU calls); decoding ran ahead in 8 threads. Wall time not recorded, because it was spread
   over three sessions
 - **Not covered:** the vectors' quality (they are used by OMNI-905)
+
+## OMNI-903 · UCF-Crime's PFM samples · 2026-11-25
+
+`scripts/pfm_samples.py build ucf_crime` → `datasets/samples/ucf_crime.csv`, **96,172 samples**, 11,542,318 bytes,
+SHA-256 `db1ea30bd2bf97b3df9556834f0f6941bf8a614cdd418897eff269f039857609`. A sample at every grid point (1 s, D-54)
+inside each 30 s and 60 s window, its sequence from the window's start (D-55). 22,583 positive, 73,589 Normal.
+
+| Class | Train samples (videos) | Validation | Held-out |
+|---|---|---|---|
+| Abuse | 542 (12) | 202 (5) | 85 (2) |
+| Arrest | 1,212 (22) | 164 (4) | 395 (5) |
+| Arson | 1,008 (19) | 226 (5) | 476 (9) |
+| Assault | 697 (22) | 92 (4) | 184 (3) |
+| Burglary | 663 (20) | 268 (4) | 530 (13) |
+| Explosion | 278 (5) | 30 (2) | 973 (21) |
+| Fighting | 1,198 (23) | 296 (4) | 160 (5) |
+| RoadAccidents | 852 (37) | 138 (8) | 486 (23) |
+| Robbery | 2,111 (53) | 451 (9) | 172 (5) |
+| Shooting | 489 (14) | 10 (1) | 1,222 (23) |
+| Shoplifting | 774 (14) | 121 (2) | 1,280 (21) |
+| Stealing | 2,898 (42) | 324 (7) | 314 (5) |
+| Vandalism | 896 (18) | 116 (2) | 250 (5) |
+| **Normal** | **53,245 (680)** | **9,429 (120)** | **10,915 (150)** |
+| **All** | **66,863** | **11,867** | **17,442** |
+
+- By length: 30 s windows 36,115 samples (sequences of 1-30 vectors), 60 s windows 60,057 (1-60)
+- `τ` on positive samples 0.033 s to 67.0 s (a UCA-timed 60 s window: the event 8 s after its end, D-49)
+- **Checked against the vectors** (`check ucf_crime` on Drive's `internvideo2` folder): every sample's frames are grid
+  vectors of its video; 82,777 vectors, 512-D, norm 1. Every sample in its video's split (D-22); all 1,448 videos
+- 7,200 samples appear under both lengths with the same frames: a video shorter than 30 s before its event (or a
+  normal video under 30 s) gives the same window for 30 and 60. Kept: each length is its own TC-5 condition
+- 32 positive grid points dropped: the event's own first frame (see the context, OMNI-903 UCF-Crime)
+
+**Not covered:** how training weighs the classes (Normal is 77% of the samples) and the two lengths (OMNI-905).
+Validation is thin for some classes (Shooting 1 video, Explosion, Shoplifting and Vandalism 2): per-class validation
+numbers will be noisy.

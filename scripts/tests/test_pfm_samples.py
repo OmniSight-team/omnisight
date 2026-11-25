@@ -55,6 +55,16 @@ def test_a_uca_timed_window_measures_tau_to_the_event_8_s_after_its_end():
     assert samples[-1]["tau_s"] == pytest.approx(18.0 - samples[-1]["t_s"])
 
 
+def test_no_sample_sits_on_the_events_first_frame_when_the_rounded_end_falls_after_it():
+    # The event starts at frame 3500 (116.6667 s); the window's end, rounded, is 116.667.
+    row = _row("Arson022", "positive", 86.667, 116.667, "Arson", nominal="30", fps=30)
+    samples = samples_mod.build({"Arson022": [row]}, "ucf_crime")
+
+    assert [s["end_frame"] for s in samples][-2:] == [3440, 3470]  # 3500 dropped, the rest unchanged
+    assert samples[-1]["tau_s"] == pytest.approx(1.0, abs=1e-3)
+    assert {s["start_frame"] for s in samples} == {samples[0]["end_frame"]}
+
+
 def test_the_store_reads_each_sequence_from_the_videos_grid_and_pads_it(tmp_path):
     windows = {"Crash/1": [_row("Crash/1", "positive", 0, 3.2)],
                "Normal/1": [_row("Normal/1", "negative", 1.956, 4.956, "Normal")]}
@@ -74,8 +84,25 @@ def test_the_store_reads_each_sequence_from_the_videos_grid_and_pads_it(tmp_path
     with pytest.raises(ValueError, match="more than"):
         store.batch([len(samples) - 1], max_length=5)
     samples[0]["start_frame"] = 2  # not a grid frame
-    with pytest.raises(ValueError, match="consecutive"):
+    with pytest.raises(ValueError, match="grid vectors"):
         samples_mod.Store(samples, tmp_path)
+
+
+def test_the_store_reads_a_window_whose_points_interleave_with_another_windows(tmp_path):
+    # A UCF-Crime normal video: the 30 s and 60 s windows at independent positions, so the video's
+    # grid (one file) holds both windows' points, interleaved.
+    rows = [_row("N1", "negative", 20.0, 50.0, "Normal", nominal="30", fps=30),
+            _row("N1", "negative", 0.5, 60.5, "Normal", nominal="60", fps=30)]
+    frames = runner.grid_frames(rows, 30.0, 1.0, context_s=0.0)
+    np.savez(runner.out_file(tmp_path, "N1"), frame_index=np.array(frames),
+             vectors=np.array([[f, 0] for f in frames], np.float32))
+    samples = samples_mod.build({"N1": rows}, "ucf_crime")
+    store = samples_mod.Store(samples, tmp_path)
+
+    last_30 = max(i for i, s in enumerate(samples) if s["nominal_length_s"] == "30")
+    x, mask = store.batch([last_30], max_length=60)
+    assert int(mask.sum()) == 30
+    assert x[0, :30, 0].tolist() == list(range(629, 1500, 30))  # its own points, not the 60 s window's
 
 
 def test_the_committed_ccd_samples_are_the_build_and_lengths_do_not_tell_the_class():
