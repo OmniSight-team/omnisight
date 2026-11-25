@@ -2650,3 +2650,19 @@ split: the same 4 losses to the last digit (0.8699, 0.3835, 0.3743, 0.3669; diff
 - `Δt` error about 0.52 s, on a `τ` range of 0.1-4.6 s
 
 **Not covered:** held-out (OMNI-906); a control for K-35 (e.g. the first vector alone); UCF-Crime.
+
+## OMNI-902 · UCF-Crime's clip vectors for the PFM, InternVideo2 · 2026-11-25
+
+Colab, NVIDIA L4, torch 2.14.1+cu130, float32, `notebooks/pfm_windows_ucf_gpu.ipynb`, final commit `8ece8e3`; three
+sessions (the first run, then two reruns after D-58 and the OpenCV import fix). `results/omni902_ucf_encoding.json` on
+Drive; vectors in `embeddings/pfm/ucf_crime/internvideo2/`.
+
+| Videos | Windows | Clip vectors | Frames decoded | Encoder time | Per clip | Failed |
+|---|---|---|---|---|---|---|
+| 1,448 of 1,448 | 2,896 (30 s and 60 s) | 82,777 (= the grid) | 7,827,787 | 5.70 h | 248.1 ms | 0 |
+
+- Grid every 1 s inside each window, no context before it (D-54, D-55); 54 windows of 35 normal videos end at their
+  last decoded frame (D-58)
+- Encoder time only (the GPU calls); decoding ran ahead in 8 threads. Wall time not recorded, because it was spread
+  over three sessions
+- **Not covered:** the vectors' quality (they are used by OMNI-905)
