@@ -77,3 +77,32 @@ the vectors back in order (the processor resizes every size to 336 x 336, so the
 **Not verified:** the same check on Cosmos's folder (another hour through Drive here; it runs on Colab when the
 models train, OMNI-904)
 
+### OMNI-904 · The model, and the notebook for its proofs and X16 (2026-11-25)
+
+**Why:** X16 needs the model before it can train it twice; OMNI-905 then trains the same model on both domains.
+
+**What was done**
+- `scripts/pfm_model.py`: Algorithm 4 as B.4 writes it (backbone, a head per domain, `κ`, the loss). What Phase A
+  leaves open is D-56. In `scripts/` for now, as the encoding and sample code; OMNI-910 serves it from
+  `services/pfm`
+- `scripts/train_pfm.py`: training with one batch per domain per step, a checkpoint after every epoch, resume
+  from it (refused for another config or seed), each epoch's order and dropout from `(seed, epoch)`; prediction;
+  the X16 measures (AUC, top-1, `Δt` error, lead time at the 10% false-alarm threshold); the ticket's rule
+- `notebooks/pfm_train_gpu.ipynb`: both encoders' folders copied from Drive, the overfit proof (32 real training
+  samples, 300 epochs), the resume proof (4 epochs straight against 2 + restart + 2, on the whole train split),
+  then 3 seeds per encoder → `results/x16_pfm_ccd.json` with the rule's verdict
+
+**Verification performed**
+- `scripts/tests/test_pfm_model.py`, 8 tests, on the CPU: each head's shapes and a non-negative `Δt`; padding with
+  garbage changes nothing; `κ` 0 on a uniform and 1 on a certain prediction; the loss is `λ(CE + α·MSE)` with
+  negatives left out of the MSE; **overfit:** 32 stand-in samples, the loss from above 0.5 to under 0.05, every one
+  right; **resume:** 2 epochs, a new process from the checkpoint, 2 more: the same 4 losses as a straight run; the
+  threshold and the lead time on hand-made predictions; the rule in its three cases
+- **Real vectors, laptop CPU, a smoke run:** 20 videos per class from train and from validation (InternVideo2, from
+  Drive). 15 epochs in 5 s, loss 2.72 to 0.29. Validation: AUC 0.993, top-1 0.946, `Δt` error 0.39 s; all 20 crash
+  windows warned, mean lead 3.50 s
+- **What the smoke run says (K-35):** near-perfect from 40 training videos, and the warning comes on almost the first
+  sample. CCD's crashes and normals come from different sources (dashcam videos online, BDD100K), so the model may
+  tell the source, not the lead-up. Both encoders may tie near 1.0 in X16, which keeps InternVideo2 under the rule
+
+**Not verified:** the proofs and X16 on the GPU (the notebook, next)

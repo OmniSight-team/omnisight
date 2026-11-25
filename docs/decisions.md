@@ -58,6 +58,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-52 | The rule detector: Algorithm 1 records which cells moved (recorded, not decided on); a run of motion, one alert per run; each rule's own pause; severities; settings on the camera | 2026-11-23 | Done |
 | D-54 | The PFM's clip vectors on a fixed time grid: every 0.5 s on CCD, 1 s on UCF-Crime, anchored at each window's last frame; Algorithm 2's 1 s clip at each point | 2026-11-24 | Done |
 | D-55 | A PFM sample's sequence starts at its window's start, not the video's (CCD: else length tells the class). Changes OMNI-903's "all the footage before t" | 2026-11-25 | Done |
+| D-56 | The PFM's choices Phase A leaves open: a summary token, positions counted back from t, 2 layers of width 128, softplus Δt, α = 1, one batch per domain per step; X16 measures the last epoch | 2026-11-25 | Done |
 
 ---
 
@@ -1354,3 +1355,23 @@ their start.
 video's grid, so no re-encoding.
 
 `scripts/pfm_samples.py`; `datasets/samples/ccd.csv`.
+
+## D-56 · The PFM's choices Phase A leaves open · 2026-11-25
+
+Algorithm 4 (Appendix B.4) fixes the shape: a shared Transformer backbone, a head per domain giving `p` and `Δt`,
+`κ = 1 - H(p) / log|C_d|`, and `L = Σ_d λ_d [CE + α · MSE(Δt, τ)]`. It does not give sizes or how `h` is taken.
+Chosen once, before any result, not tuned (`scripts/pfm_model.py`, `Config`, saved with every checkpoint):
+
+- **`h` is a learned summary token's output,** put in front of the window; the padding is masked out
+- **Positions count back from `t`** (0 = the newest vector): the sequences end at `t` and have different lengths,
+  so "the vector 2 s before now" gets the same position in every sample
+- **Size:** 2 pre-norm layers, width 128, 4 heads, feed-forward 256, dropout 0.1. Small, because the data is:
+  CCD's train split is 24,533 samples of at most 10 vectors
+- **`Δt` through softplus** (a time ahead is never negative); the MSE on positive samples only, in seconds;
+  **`α = 1`, every `λ_d = 1`**
+- **Training:** AdamW, learning rate 3e-4, weight decay 0.01, batches of 256, gradient norm clipped at 1, 30 epochs.
+  Each step draws one batch per domain and sums their losses (B.4's `Σ_d`); with CCD alone, one batch
+- **X16 measures the last epoch,** no early stopping: choosing an epoch on validation and then reporting validation
+  would favour whichever encoder's curve is noisier
+- **X16's warning threshold:** the lowest `θ` at which at most 10% of validation's normal windows warn
+  (OMNI-905's example rule), the same rule for both encoders
