@@ -2702,3 +2702,40 @@ inside each 30 s and 60 s window, its sequence from the window's start (D-55). 2
 **Not covered:** how training weighs the classes (Normal is 77% of the samples) and the two lengths (OMNI-905).
 Validation is thin for some classes (Shooting 1 video, Explosion, Shoplifting and Vandalism 2): per-class validation
 numbers will be noisy.
+
+## OMNI-905 · The joint PFM, chosen on validation · 2026-11-26
+
+Colab, one Tesla T4, torch 2.14.1+cu130, commit `c82ce49`, `notebooks/pfm_train_joint_gpu.ipynb`;
+`results/omni905_joint.json` on Drive. D-59's rules: D-56's config with `α` = 0.687 (CCD) and 0.00478 (UCF-Crime),
+3 seeds × 30 epochs, trained on both train splits (CCD 24,533 samples, UCF-Crime 66,863), the epoch chosen on
+UCF-Crime's validation ROC-AUC. Training 632-640 s per seed (about 21 s per epoch, validation included).
+
+| Seed | Best epoch | UCF-Crime val AUC at it | At epoch 1 | At epoch 30 | CCD val AUC |
+|---|---|---|---|---|---|
+| 0 | 10 | 0.9507 | 0.949 | 0.942 | 1.0000 |
+| 1 | **8** | **0.9579** | 0.951 | 0.942 | 1.0000 |
+| 2 | 1 | 0.9528 | 0.953 | 0.917 | 1.0000 |
+
+**Chosen: `pfm-joint-v1-s1-e8`** (seed 1, epoch 8; `model.pt` SHA-256 `f23f8483...`). Training loss 3.5 after
+epoch 1 (about the 3.7 of a model that guesses the class shares and the mean `τ`), 0.36 after epoch 30.
+
+The chosen model on **validation**:
+
+| Domain | ROC-AUC | Top-1 | Top-3 (positives) | Δt error | θ_d | Negative windows warned | Positive windows warned | Lead time |
+|---|---|---|---|---|---|---|---|---|
+| CCD | 1.0000 | 0.9998 | 1.0000 | 0.51 s | floor | 0.2% of 450 | 225 / 225 | 3.49 s |
+| UCF-Crime | 0.9579 | 0.8000 | 0.5164 | 13.11 s | floor | 10.0% of 240 | 92 / 114 | 27.91 s |
+
+- **`θ_d` is at its floor in both domains:** the most likely class alone keeps false alarms within 10% (UCF-Crime:
+  exactly 24 of 240 negative windows ever have an event as their most likely class), so any event call warns. The
+  confidence threshold does no work at this model
+- **UCF-Crime's validation AUC is about 0.95 from the first epoch** (0.949-0.953 for the three seeds) and does not
+  rise after; it drifts down with more epochs (seed 2 best at epoch 1). Learned almost at once, as on CCD (K-36)
+- **Lead time is near its ceiling:** if every positive window warned at its first sample the mean would be 28.42 s;
+  27.91 s over the 92 that warned. Warnings come at the start of the window, 30-60 s before the event (K-36)
+- **`Δt` on UCF-Crime is not learned:** 13.11 s error, against 11.67 s for always answering the train mean (25.43 s)
+- Top-1 0.80 is mostly Normal (80% of the samples); which crime, top-3 over positives, 0.52 (SM-2's target is 70%,
+  on held-out, OMNI-906)
+
+**Not covered:** held-out (OMNI-906); a control for K-35 and K-36 (e.g. the first vector alone, or the window's
+first seconds only); per class.
