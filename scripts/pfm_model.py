@@ -44,6 +44,7 @@ class Config:
     ff: int = 256
     dropout: float = 0.1
     alpha: float = 1.0  # weight of the Δt term
+    alphas: dict[str, float] = field(default_factory=dict)  # per domain (D-59: 1 / var τ); missing = alpha
     lambdas: dict[str, float] = field(default_factory=dict)  # per domain; missing = 1.0
     lr: float = 3e-4
     weight_decay: float = 0.01
@@ -52,6 +53,9 @@ class Config:
 
     def lam(self, domain: str) -> float:
         return self.lambdas.get(domain, 1.0)
+
+    def alpha_of(self, domain: str) -> float:
+        return self.alphas.get(domain, self.alpha)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -107,7 +111,7 @@ def loss(outputs: dict[str, tuple], targets: dict[str, tuple], config: Config) -
     """Appendix B.4: Σ_d λ_d [CE + α · MSE]. `outputs[d]` = (logits, Δt), `targets[d]` = (y, τ)."""
     total, parts = 0.0, {}
     for d, (logits, dt) in outputs.items():
-        value, part = domain_loss(logits, dt, *targets[d], config.alpha)
+        value, part = domain_loss(logits, dt, *targets[d], config.alpha_of(d))
         total = total + config.lam(d) * value
         parts[d] = part
     return total, parts

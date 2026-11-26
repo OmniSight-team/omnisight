@@ -164,3 +164,47 @@ def test_roc_auc_and_the_x16_rule():
     assert within["winner"] == "internvideo2"  # 0.0267 more, spread 0.06
     earlier = train_mod.x16_rule({"internvideo2": runs([0.80, 0.80, 0.80], 2.0), "cosmos": runs([0.9, 0.9, 0.9], 1.9)})
     assert earlier["winner"] == "internvideo2"  # better AUC, lower lead time
+
+
+def test_validation_keeps_the_best_epoch_and_a_resumed_run_chooses_the_same(tmp_path):
+    data = _ccd(48)
+    config = _config(domains=["ccd"], epochs=5)
+    scores = iter([0.5, 0.9, 0.7, 0.9, 0.6] * 2)  # epoch 2 is the best; epoch 4's tie does not replace it
+
+    def validate(model):
+        return {"score": next(scores)}
+
+    _, straight = train_mod.train(config, {"ccd": data}, tmp_path / "a", seed=0, validate=validate, log=lambda m: None)
+    train_mod.train(config, {"ccd": data}, tmp_path / "b", seed=0, validate=validate, stop_after=3, log=lambda m: None)
+    _, resumed = train_mod.train(config, {"ccd": data}, tmp_path / "b", seed=0, validate=validate, log=lambda m: None)
+
+    assert [h["validation"]["score"] for h in straight] == [0.5, 0.9, 0.7, 0.9, 0.6]
+    for folder in ("a", "b"):
+        model, state = train_mod.load(tmp_path / folder / "best.pt")
+        assert (state["epoch"], state["score"], state["seed"]) == (2, 0.9, 0)
+        assert not model.training
+    assert [h["loss"] for h in resumed] == pytest.approx([h["loss"] for h in straight], rel=1e-5)
+
+
+def test_top3_counts_a_positive_sample_whose_class_is_among_the_three_most_likely():
+    samples = [{"label": label, "tau_s": "1" if label != "Normal" else "", "clip_key": f"v{i}",
+                "nominal_length_s": "30", "t_s": "1"} for i, label in enumerate(["Abuse", "Arrest", "Normal"])]
+    data = train_mod.Data(None, samples, range(3), "ucf_crime")
+    p = np.full((3, 14), 0.01)
+    p[0, [0, 2, 3, 1]] = [0.4, 0.3, 0.2, 0.05]  # Abuse (1) is 4th: a miss
+    p[1, [0, 2]] = [0.5, 0.4]  # Arrest (2) is 2nd: a hit
+    p[2, 0] = 0.9
+
+    m = train_mod.evaluate(data, p / p.sum(axis=1, keepdims=True), np.ones(3))
+    assert m["top3_positive"] == pytest.approx(0.5)
+
+
+def test_a_domain_can_weigh_its_time_term_on_its_own_scale():
+    logits, y = torch.tensor([[0.0, 1.0]]), torch.tensor([1])
+    dt, tau = torch.tensor([10.0]), torch.tensor([30.0])  # squared error 400
+    config = _config(alphas={"ucf_crime": 0.005})
+    ce = float(torch.nn.functional.cross_entropy(logits, y))
+
+    total, _ = model_mod.loss({"ucf_crime": (logits, dt), "ccd": (logits, dt)}, {"ucf_crime": (y, tau), "ccd": (y, tau)}, config)
+    assert float(total) == pytest.approx((ce + 0.005 * 400) + (ce + 1.0 * 400), rel=1e-6)  # CCD keeps alpha
+    assert Config(**config.to_dict()).alpha_of("ucf_crime") == 0.005

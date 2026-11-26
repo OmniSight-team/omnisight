@@ -62,6 +62,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-56 | The PFM's choices Phase A leaves open: a summary token, positions counted back from t, 2 layers of width 128, softplus Δt, α = 1, one batch per domain per step; X16 measures the last epoch | 2026-11-25 | Done |
 | D-57 | How the PFM is presented: an early warning that tells the operator where to look, not a model that predicts the future; a probability timeline, two levels of claim, chosen clear examples; future work: one big event, reinforcement learning from operators' feedback | 2026-11-25 | Agreed (direction; details at OMNI-906, 912, 913) |
 | D-58 | A UCF-Crime negative window ends at the video's last decoded frame, not past it: 35 normal videos decode 1-20 frames fewer than their container's duration says; their 54 windows are capped, no other window moves | 2026-11-25 | Done |
+| D-59 | The joint PFM: one model for CCD and UCF-Crime, D-56's config except each domain's Δt term weighed by 1 / var(τ); 3 seeds, the epoch and seed chosen on UCF-Crime's validation ROC-AUC; θ_d by the 10% rule on validation; the run record is a file on Drive, not a table | 2026-11-26 | Agreed (written before training) |
 
 ---
 
@@ -1454,3 +1455,30 @@ seeded draws are unchanged and only those videos' windows move: 54 of 2,896 rows
 
 **Why not `nb_frames` for every video:** by `nb_frames`, 329 videos would end early, but 294 of them decoded past it
 in the run; only the decoder's own count is trusted, and only where it was measured.
+
+## D-59 · How the joint PFM is trained, chosen and recorded · 2026-11-26
+
+Written before the training run (OMNI-905, `notebooks/pfm_train_joint_gpu.ipynb`).
+
+- **One model for both domains:** D-56's backbone and a head per domain; each step one batch from each domain's
+  train split, the losses summed (B.4, `λ_d = 1`). An epoch is UCF-Crime's 262 batches; CCD's 96 repeat within it.
+  Both lengths (30 s and 60 s) train, and the 7,200 samples that are the same under both stay (OMNI-903)
+- **Deviation from D-56, `α`:** each domain's `Δt` term is weighed by `α_d = 1 / var(τ)` of its train positives
+  (`Config.alphas`). D-56 set `α = 1` on CCD, where `τ` is under 5 s (var 1.46). UCF-Crime's `τ` reaches 67 s
+  (var 209): with `α = 1` its squared error starts near 856 against a class loss near 2.6, so the shared backbone
+  would learn mostly timing. With `1 / var(τ)`, "always the mean `τ`" costs 1 in both domains, the order of the
+  class loss. About 0.68 (CCD) and 0.0048 (UCF-Crime), computed in the notebook and saved in the config. Not tuned.
+  X16 (CCD alone, `α = 1`) is unaffected
+- **No class weights:** Normal is 77% of UCF-Crime's samples, but the choice below (ROC-AUC) and the thresholds do
+  not depend on the classes' balance; D-56's plain cross-entropy stays
+- **The choice, on validation only:** 3 seeds, 30 epochs each; after every epoch the ROC-AUC of "an event" against
+  Normal on UCF-Crime's validation samples. The model is the best (seed, epoch) of the 90 (the earlier one on a tie).
+  CCD is measured too but cannot choose: it is at its ceiling (K-35). Held-out is not touched (OMNI-906)
+- **The thresholds `θ_d`:** on the chosen model, per domain, X16's rule: the lowest `θ` at which at most 10% of the
+  domain's validation negative windows warn (a sample warns when its most likely class is an event and `max(p) ≥ θ`)
+- **The `model_runs` record is a file, not a table:** training runs on Colab, which cannot reach the product's
+  database. The chosen weights go to `MyDrive/omnisight/models/pfm/runs/{run_id}/model.pt` with `run.json` (run id,
+  config, domains, epochs trained and chosen, seed, `θ_d`, the validation measures, commit, the samples' and the
+  checkpoint's SHA-256); `models/pfm/model_runs.json` lists the runs and names the chosen one.
+  `scripts/pfm_runs.py download` copies it to `models/trained/pfm/` (checked by SHA-256), where OMNI-910 reads
+  `run.json` for `model_run_id` and `θ_d`

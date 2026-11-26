@@ -1,4 +1,4 @@
-"""OMNI-904 / OMNI-X16: train the PFM (`pfm_model.py`) on the samples (`pfm_samples.py`), resumably,
+"""OMNI-904 / OMNI-X16 / OMNI-905: train the PFM (`pfm_model.py`) on the samples (`pfm_samples.py`), resumably,
 and measure it on a split.
 
 **Training.** Each step draws one batch per domain and sums the domains' losses with `λ_d`
@@ -6,6 +6,10 @@ and measure it on a split.
 after an epoch and resumed from its checkpoint makes the same epochs as one that never stopped.
 `{out}/last.pt` (model, optimiser, epoch, history, config, seed) is written atomically after every
 epoch; a run with a checkpoint resumes from it, and refuses one made with another config or seed.
+
+**Choosing the epoch** (OMNI-905, D-59): with `validate`, each epoch ends with a validation measure
+whose `score` decides; the best epoch so far is kept in `{out}/best.pt` (the first one on a tie), and
+its epoch and score live in `last.pt` too, so a resumed run keeps choosing the same way.
 
 **Measuring** (X16, on validation; written before training):
 - ROC-AUC of "an event" against Normal: the score is `1 - p(Normal)`, over every sample
@@ -74,21 +78,23 @@ def _save(path: Path, state: dict) -> None:
 
 
 def train(config: Config, data: dict[str, Data], out: Path, seed: int, *, device="cpu", stop_after: int | None = None,
-          log=print) -> tuple[PFM, list[dict]]:
-    """Train to `config.epochs` (or stop after epoch `stop_after`), resuming from `{out}/last.pt`."""
+          validate=None, log=print) -> tuple[PFM, list[dict]]:
+    """Train to `config.epochs` (or stop after epoch `stop_after`), resuming from `{out}/last.pt`.
+    `validate(model) -> dict` with a `score`, if given, runs after every epoch: its result goes in the
+    history and the best-scoring epoch is saved to `{out}/best.pt`."""
     out.mkdir(parents=True, exist_ok=True)
     checkpoint = out / "last.pt"
     torch.manual_seed(seed)
     model = PFM(config).to(device)
     optimiser = torch.optim.AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
-    start, history = 0, []
+    start, history, best = 0, [], {"epoch": 0, "score": -math.inf}
     if checkpoint.is_file():
         state = torch.load(checkpoint, map_location=device, weights_only=False)
         if state["config"] != config.to_dict() or state["seed"] != seed:
             raise RuntimeError(f"{checkpoint} was made with {state['config']}, seed {state['seed']}")
         model.load_state_dict(state["model"])
         optimiser.load_state_dict(state["optimiser"])
-        start, history = state["epoch"], state["history"]
+        start, history, best = state["epoch"], state["history"], state.get("best", best)
         log(f"resumed after epoch {start}")
     for epoch in range(start, config.epochs):
         if stop_after is not None and epoch >= stop_after:
@@ -117,11 +123,26 @@ def train(config: Config, data: dict[str, Data], out: Path, seed: int, *, device
                 for name, value in part.items():
                     sums[f"{d}_{name}"] = sums.get(f"{d}_{name}", 0.0) + value
         record = {"epoch": epoch + 1, **{k: v / steps for k, v in sums.items()}, "seconds": time.perf_counter() - began}
+        if validate is not None:
+            record["validation"] = validate(model)
+            if record["validation"]["score"] > best["score"]:
+                best = {"epoch": epoch + 1, "score": record["validation"]["score"]}
+                _save(out / "best.pt", {"model": model.state_dict(), "epoch": epoch + 1, "score": best["score"],
+                                        "config": config.to_dict(), "seed": seed})
         history.append(record)
         _save(checkpoint, {"model": model.state_dict(), "optimiser": optimiser.state_dict(), "epoch": epoch + 1,
-                           "history": history, "config": config.to_dict(), "seed": seed})
-        log(f"epoch {epoch + 1}: loss {record['loss']:.4f} ({record['seconds']:.1f} s)")
+                           "history": history, "config": config.to_dict(), "seed": seed, "best": best})
+        score = f", validation {record['validation']['score']:.4f}" if validate is not None else ""
+        log(f"epoch {epoch + 1}: loss {record['loss']:.4f}{score} ({record['seconds']:.1f} s)")
     return model, history
+
+
+def load(path: Path, device="cpu") -> tuple[PFM, dict]:
+    """A model from a checkpoint (`best.pt` or `last.pt`), in eval mode, and the checkpoint's other fields."""
+    state = torch.load(path, map_location=device, weights_only=False)
+    model = PFM(Config(**state["config"])).to(device)
+    model.load_state_dict(state["model"])
+    return model.eval(), {k: v for k, v in state.items() if k not in ("model", "optimiser")}
 
 
 @torch.no_grad()
@@ -178,6 +199,7 @@ def evaluate(data: Data, p: np.ndarray, dt: np.ndarray, false_alarm: float = FAL
         "samples": len(data), "positive_samples": int(positive.sum()),
         "roc_auc": _roc_auc(positive, 1.0 - p[:, 0]),
         "top1": float((p.argmax(axis=1) == data.y).mean()),
+        "top3_positive": float((np.argsort(-p, axis=1)[positive, :3] == data.y[positive, None]).any(axis=1).mean()),
         "dt_mae_s": float(np.abs(dt[positive] - data.tau[positive]).mean()),
         "theta": theta, "false_alarm_windows": float((worst >= theta).mean()), "negative_windows": len(worst),
         "positive_windows": len(windows), "warned_windows": len(leads),
