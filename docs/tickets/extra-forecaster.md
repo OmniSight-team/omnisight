@@ -120,12 +120,12 @@ epochs, patience 30; 3 seeds (0, 1, 2); `θ_d` by the 10% rule on validation nor
 | **B** | CCD + UCF-Crime | ✓ | ✓ | what Fix 2 adds |
 | **C** | UCF-Crime only | ✓ | ✓ | does learning crashes help forecast crimes? (B against C) |
 
-- [ ] **Choosing the epoch** (every version): after every epoch, all eight measures on validation go into the history.
+- [x] **Choosing the epoch** (every version): after every epoch, all eight measures on validation go into the history.
       An epoch can become `best.pt` only if its **UCF-Crime flat-line check is ≤ 0.60**; among those, the highest
       **UCF-Crime within-window AUC** wins. The same rule drives the patience
-- [ ] One notebook, new folders and run ids per version and seed; resumable. **Order: B, A, C** (the served model
+- [x] One notebook, new folders and run ids per version and seed; resumable. **Order: B, A, C** (the served model
       comes from A or B, so those first; C may finish on Sunday)
-- [ ] A local dry run first (a few videos, 2 epochs, each version) so nothing breaks on Colab
+- [x] A local dry run first (a few videos, 2 epochs, each version) so nothing breaks on Colab
 
 ## OMNI-X22 · The choice, held-out once, the record · Sat evening (C's comparison when it ends)
 

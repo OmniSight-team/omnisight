@@ -177,3 +177,54 @@ so a score that only grows with time is penalised in training too, not only by t
 ### Result
 
 Fix 2 in training, off by default, tested. Next: OMNI-X21, training on Colab.
+
+---
+
+## OMNI-X21 · Training on Colab: three versions
+
+### Why this ticket exists
+
+D-65's three versions (A: Fix 1; B: Fix 1 + Fix 2; C: B on UCF-Crime alone) answer what each fix adds and whether
+learning crashes helps forecast crimes. Each version has 3 seeds, and each seed's epoch is chosen by D-65's rule.
+
+### What was done
+
+2026-11-28.
+- `scripts/train_pfm.validation`: per domain `pfm_measures.measures` (the eight, `θ_d` fit on validation) and `Δt`'s
+  mean absolute error; `passes` is "UCF-Crime's within-window AUC and flat-line check both exist and the check is
+  ≤ 0.60"; `score` is the within-window AUC if it passes, else `-inf`. `train` already keeps `best.pt` only on a
+  higher score (the first epoch on a tie) and counts the patience from it, so an epoch that fails never becomes
+  `best.pt`, and a seed with no passing epoch writes none and stops after 30 epochs. The X16 measures
+  (`evaluate`) are no longer in the history
+- `notebooks/pfm_train_forecast_gpu.ipynb` (new): the vectors as OMNI-905; versions in the order B, A, C, 3 seeds
+  each, each config written out (`minus_first`, `labels="event"`, `DISTANCE_WEIGHTS`, `RANK_GAPS` for B and C,
+  `α_d` per version's datasets, 120 epochs, patience 30, everything else the `Config` defaults D-65 names); folders
+  `models/pfm/v5-{a,b,c}/seed{0,1,2}/`; resumable (Run all again); `RUN_ONLY` to train only some versions (C on
+  Sunday). Cell 4 prints, per version, how many epochs each seed trained and passed, and the best epoch's eight
+  measures for each dataset, checks `best.pt` holds that epoch (or that a failed seed has none), and writes
+  `results/x21_v5{a,b,c}.json` (config, histories, best per seed, training time)
+- Choosing the served model, the A/B and B/C comparisons and held-out are X22's; this notebook does not touch
+  held-out data or `model_runs.json`
+
+### Verification performed
+
+- Two new tests and one updated: an epoch whose event window rises perfectly but whose normal window climbs (flat-line
+  1.0) scores `-inf`, never becomes `best.pt`, and with patience 2 training stops two epochs after the last passing
+  one; no passing epoch writes no `best.pt`; the epoch-choice test's normal window now has a `close` second (else it
+  cannot pass), and the history holds the eight measures and `Δt`'s error. 58 PFM tests pass
+- **Dry run of the notebook's own cells on this laptop's CPU** (cell 1 replaced by local paths), real vectors from
+  Drive (3 videos per domain, split and kind; UCF-Crime validation event videos with 20 s of lead-up), 2 seeds × 2
+  epochs, every version: all six seeds trained, the gate rejected epochs (B seed 0's first, both of A seed 0's, which
+  then had no `best.pt` and was reported "failed"), cell 4's checks passed and the three files were written. A
+  second Run all resumed every seed with no new epoch. The numbers mean nothing and are not recorded
+- `draw_pairs` on the full train splits: UCF-Crime 66,863 samples, 1,858 windows drawable, indexed once in 4.4 s,
+  then about 1 ms per draw; CCD 3,132 windows, 1.9 s, about 1 ms
+
+### Not verified
+
+- **The Colab runs themselves** (Ahmad): order B, A, C; C may finish on Sunday
+- How long a version takes on the GPU, with the ranking batch's extra forward pass
+
+### Result
+
+Ready for Colab: `notebooks/pfm_train_forecast_gpu.ipynb`, after this is pushed. Next: OMNI-X22 once A and B end.

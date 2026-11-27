@@ -12,9 +12,10 @@ only `epochs` may grow, so a finished run can be extended and makes the same epo
 **Choosing the epoch** (OMNI-905, D-59): with `validate`, each epoch ends with a validation measure
 whose `score` decides; the best epoch so far is kept in `{out}/best.pt` (the first one on a tie), and
 its epoch and score live in `last.pt` too, so a resumed run keeps choosing the same way.
-`validation` (OMNI-917, D-64) is that measure for the event-only model trained again: per domain the X16
-measures and `pfm_measures`' five, so every epoch's are in the history; its `score` is UCF-Crime's
-within-window AUC, not the pooled AUC.
+`validation` (OMNI-X21, D-65) is that measure: per domain `pfm_measures`' eight (and `Δt`'s error), so every
+epoch's are in the history; its `score` is UCF-Crime's within-window AUC **if UCF-Crime's flat-line check is
+≤ 0.60**, else `-inf`: an epoch that fails the check never becomes `best.pt`, and the patience counts from the last
+epoch that passed and improved.
 
 **Measuring** (X16, on validation; written before training):
 - ROC-AUC of "an event" against Normal: the score is `1 - p(Normal)`, over every sample
@@ -273,19 +274,21 @@ def evaluate(data: Data, p: np.ndarray, dt: np.ndarray, false_alarm: float = FAL
 
 
 def validation(model: PFM, data: dict[str, Data], device="cpu", choose_by: str = "ucf_crime") -> dict:
-    """OMNI-917 (D-64): per domain `evaluate`'s measures, `pfm_measures.measures` and the detection rate at
-    `θ`; `score` is `choose_by`'s within-window AUC (`-inf` if no window has both parts)."""
+    """OMNI-X21 (D-65): per domain `pfm_measures.measures` (the eight, `θ_d` fit on this split) and `Δt`'s mean
+    absolute error on event samples. `score` is `choose_by`'s within-window AUC if its flat-line check is at most
+    `FLAT_LINE_MAX`, else `-inf` (also when either cannot be computed); `passes` says which."""
     import pfm_measures  # here, not at the top: pfm_measures imports this module
 
     out = {}
     for d, part in data.items():
         p, dt = predict(model, part, device)
-        e = evaluate(part, p, dt)
-        out[d] = {**e, **pfm_measures.measures(part, p),
-                  "detection_rate": e["warned_windows"] / e["positive_windows"] if e["positive_windows"] else None}
-    score = out[choose_by]["within_window_auc"]
-    out["score"] = -math.inf if score is None else score
-    out["chosen_by"] = f"{choose_by} within_window_auc"
+        positive = part.y != 0
+        out[d] = {**pfm_measures.measures(part, p), "samples": len(part),
+                  "dt_mae_s": float(np.abs(dt[positive] - part.tau[positive]).mean()) if positive.any() else None}
+    within, flat = out[choose_by]["within_window_auc"], out[choose_by]["flat_line"]
+    out["passes"] = within is not None and flat is not None and flat <= pfm_measures.FLAT_LINE_MAX
+    out["score"] = within if out["passes"] else -math.inf
+    out["chosen_by"] = f"{choose_by} within_window_auc, flat_line <= {pfm_measures.FLAT_LINE_MAX}"
     return out
 
 
