@@ -84,13 +84,13 @@ Every measure scores a second by `1 - p(Normal)`. Each is tested on hand-made wi
 
 ## OMNI-X19 · Fix 1: distance weights on the class error · Sat morning
 
-- [ ] An event second's cross-entropy is multiplied by `w = exp(-max(0, τ - τ0) / s)`:
+- [x] An event second's cross-entropy is multiplied by `w = exp(-max(0, τ - τ0) / s)`:
   - UCF-Crime: `τ0` = 8 s, `s` = 10 s (τ 8 → 1.00, 15 → 0.50, 25 → 0.18, 35 → 0.07)
   - CCD: `τ0` = 0 s, `s` = 1 s (DSTA's setting)
   - Normal seconds: weight 1
   - The class error of a batch is the weighted mean: `Σ w · CE / Σ w`
-- [ ] The time error (`Δt`'s MSE on event seconds) is unchanged
-- [ ] A `Config` option, off by default, so older checkpoints load as before. Tested: a far event second's error
+- [x] The time error (`Δt`'s MSE on event seconds) is unchanged
+- [x] A `Config` option, off by default, so older checkpoints load as before. Tested: a far event second's error
       counts less than a close one's; a normal second's counts fully
 
 ## OMNI-X20 · Fix 2: ranking inside the same window · Sat morning

@@ -22,6 +22,12 @@ changes is left (OMNI-914, K-36). Done inside the model, so serving it needs not
 **The labels** (`Config.labels`, D-62): `classes`, each domain's own classes (as above), or `event`, every event class
 merged into one, so a head answers only "an event is coming" or Normal (OMNI-916). CCD is the same either way.
 
+**Distance weights** (`Config.distance_weights`, Fix 1 of D-65, OMNI-X19): with a domain's `(τ0, s)` set, an event
+sample's cross-entropy is multiplied by `w = exp(-max(0, τ - τ0) / s)` and a normal sample's by 1, and the class
+error is `Σ w · CE / Σ w`, so a second long before the event, where nothing is visible yet, counts less
+(DSA / DSTA's exponential weighting). D-65's settings are `DISTANCE_WEIGHTS`. Empty (the default, and every
+checkpoint saved before it) is the plain mean. The time error is unchanged.
+
 Every setting is in `Config`, saved with each checkpoint.
 """
 
@@ -41,6 +47,7 @@ CLASSES = {
 
 
 INPUTS = ("raw", "minus_first")
+DISTANCE_WEIGHTS = {"ucf_crime": [8.0, 10.0], "ccd": [0.0, 1.0]}  # D-65: (τ0, s) in seconds; CCD is DSTA's
 LABELS = ("classes", "event")
 
 
@@ -69,6 +76,7 @@ class Config:
     epochs: int = 30
     input: str = "raw"  # or "minus_first" (D-61); a checkpoint saved before D-61 is raw
     labels: str = "classes"  # or "event" (D-62); a checkpoint saved before D-62 is classes
+    distance_weights: dict[str, list[float]] = field(default_factory=dict)  # per domain (τ0, s), D-65; missing = off
 
     def __post_init__(self) -> None:
         if self.input not in INPUTS:
@@ -81,6 +89,10 @@ class Config:
 
     def alpha_of(self, domain: str) -> float:
         return self.alphas.get(domain, self.alpha)
+
+    def weights_of(self, domain: str) -> tuple[float, float] | None:
+        w = self.distance_weights.get(domain)
+        return None if w is None else (float(w[0]), float(w[1]))
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -126,19 +138,32 @@ def kappa(p: torch.Tensor) -> torch.Tensor:
     return 1.0 - entropy / math.log(p.shape[-1])
 
 
-def domain_loss(logits: torch.Tensor, dt: torch.Tensor, y: torch.Tensor, tau: torch.Tensor, alpha: float) -> tuple[torch.Tensor, dict]:
-    """`CE + α · MSE(Δt, τ)` for one domain's samples; the MSE on positives only (`τ` NaN on a negative)."""
-    ce = F.cross_entropy(logits, y)
+def distance_weight(tau: torch.Tensor, tau0: float, s: float) -> torch.Tensor:
+    """Fix 1 (D-65): `exp(-max(0, τ - τ0) / s)` on an event sample, 1 on a normal one (`τ` NaN)."""
+    w = torch.exp(-(torch.nan_to_num(tau, nan=0.0) - tau0).clamp(min=0) / s)
+    return torch.where(torch.isnan(tau), torch.ones_like(w), w)
+
+
+def domain_loss(logits: torch.Tensor, dt: torch.Tensor, y: torch.Tensor, tau: torch.Tensor, alpha: float,
+                weights: tuple[float, float] | None = None) -> tuple[torch.Tensor, dict]:
+    """`CE + α · MSE(Δt, τ)` for one domain's samples; the MSE on positives only (`τ` NaN on a negative).
+    With `weights = (τ0, s)` the CE is the distance-weighted mean `Σ w · CE / Σ w` (Fix 1)."""
+    if weights is None:
+        ce = F.cross_entropy(logits, y)
+    else:
+        w = distance_weight(tau, *weights)
+        ce = (w * F.cross_entropy(logits, y, reduction="none")).sum() / w.sum()
     positive = ~torch.isnan(tau)
     mse = F.mse_loss(dt[positive], tau[positive]) if positive.any() else dt.sum() * 0.0
     return ce + alpha * mse, {"ce": float(ce.detach()), "mse": float(mse.detach())}
 
 
 def loss(outputs: dict[str, tuple], targets: dict[str, tuple], config: Config) -> tuple[torch.Tensor, dict]:
-    """Appendix B.4: Σ_d λ_d [CE + α · MSE]. `outputs[d]` = (logits, Δt), `targets[d]` = (y, τ)."""
+    """Appendix B.4: Σ_d λ_d [CE + α · MSE], the CE distance-weighted where `config` says (Fix 1).
+    `outputs[d]` = (logits, Δt), `targets[d]` = (y, τ)."""
     total, parts = 0.0, {}
     for d, (logits, dt) in outputs.items():
-        value, part = domain_loss(logits, dt, *targets[d], config.alpha_of(d))
+        value, part = domain_loss(logits, dt, *targets[d], config.alpha_of(d), config.weights_of(d))
         total = total + config.lam(d) * value
         parts[d] = part
     return total, parts

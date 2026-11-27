@@ -99,3 +99,39 @@ merges `evaluate`'s keys with these; X21 wires the epoch rule to the eight alone
 
 The eight measures, D-65's ranges, tested. UCF-Crime's main measure rests on 72 validation and 142 held-out windows.
 Next: OMNI-X19, Fix 1.
+
+---
+
+## OMNI-X19 · Fix 1: distance weights on the class error
+
+### Why this ticket exists
+
+Every second of an event window was labelled "Event" at full strength, even 30 s before the event, so training asked
+the model to say "Event" where nothing is visible yet. Accident anticipation (DSA, DSTA) weights each second's error
+by its distance to the event; D-65 sets the weights.
+
+### What was done
+
+2026-11-28. `scripts/pfm_model.py`:
+- `Config.distance_weights`: per domain `[τ0, s]`; empty by default, so every older checkpoint loads and trains as
+  before (a config saved before it has no such key and gets the default). `Config.weights_of(domain)`
+- `DISTANCE_WEIGHTS = {"ucf_crime": [8, 10], "ccd": [0, 1]}`, D-65's settings, for X21's notebook to pass
+- `distance_weight(τ, τ0, s) = exp(-max(0, τ - τ0) / s)` on event samples, 1 on normal ones (`τ` NaN)
+- `domain_loss(..., weights)`: with weights, the CE is `Σ w · CE / Σ w`; without, the plain mean as before. The time
+  error (MSE of `Δt` on event samples) is untouched; `loss` passes each domain's own weights
+
+### Verification performed
+
+- Three new tests: the weights match the ticket's table (τ 8 → 1.00, 15 → 0.50, 25 → 0.18, 35 → 0.07) and CCD's
+  `exp(-τ)`; a badly wrong event sample raises the loss less when it is far (τ 28) than when it is close (τ 8), with
+  the weighted means worked out by hand; a normal sample weighs 1; off by default and for a pre-D-65 config the loss
+  is the old one; on, the CE is weighted and the MSE unchanged (4.0). 53 PFM tests pass
+- A 3-epoch run on 32 hand-made CCD samples with the weights on: it trains, the loss falls (1.18, 1.07, 0.98)
+
+### Not verified
+
+- Its effect on a real model: X21's versions A to C
+
+### Result
+
+Fix 1 in the model, off by default, tested. Next: OMNI-X20, Fix 2.

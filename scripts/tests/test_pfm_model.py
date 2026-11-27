@@ -316,3 +316,52 @@ def test_a_split_without_a_window_that_has_both_parts_scores_minus_infinity(monk
     monkeypatch.setattr(train_mod, "predict", lambda model, d, device="cpu": (_p([0.5, 0.6, 0.1]), np.zeros(3)))
     assert train_mod.validation(None, {"ucf_crime": data})["score"] == -math.inf
 
+
+def test_distance_weights_follow_d65_and_are_one_on_normal_seconds():
+    w = model_mod.distance_weight(torch.tensor([8.0, 15.0, 25.0, 35.0, 3.0, float("nan")]), 8.0, 10.0)
+    assert w.tolist() == pytest.approx([1.00, math.exp(-0.7), math.exp(-1.7), math.exp(-2.7), 1.0, 1.0])
+    assert [round(v, 2) for v in w[:4].tolist()] == [1.00, 0.50, 0.18, 0.07]  # the ticket's table
+    ccd = model_mod.distance_weight(torch.tensor([0.1, 2.0]), *model_mod.DISTANCE_WEIGHTS["ccd"])
+    assert ccd.tolist() == pytest.approx([math.exp(-0.1), math.exp(-2.0)])  # τ0 = 0: every crash second decays
+
+
+def test_a_far_event_seconds_error_counts_less_than_a_close_ones_and_a_normal_ones_fully():
+    logits = torch.tensor([[0.0, 0.0], [0.0, 0.0], [2.0, 0.0]])  # each sample wrong to a different degree
+    y = torch.tensor([1, 1, 1])
+    dt = torch.zeros(3)
+    ce = torch.nn.functional.cross_entropy(logits, y, reduction="none")
+    weights = (8.0, 10.0)
+
+    far = model_mod.domain_loss(logits[1:], dt[1:], y[1:], torch.tensor([28.0, 8.0]), 0.0, weights)[0]
+    near = model_mod.domain_loss(logits[1:], dt[1:], y[1:], torch.tensor([8.0, 28.0]), 0.0, weights)[0]
+    # the badly wrong sample (CE 2.13) weighs exp(-2) when far, 1 when close
+    w = math.exp(-2.0)
+    assert float(far) == pytest.approx((w * float(ce[1]) + float(ce[2])) / (w + 1), rel=1e-6)
+    assert float(near) == pytest.approx((float(ce[1]) + w * float(ce[2])) / (1 + w), rel=1e-6)
+    assert float(far) > float(near)  # the wrong sample counts fully only when it is close
+
+    y_normal = torch.tensor([1, 0])  # a normal sample far "back in time" still weighs 1
+    mixed = model_mod.domain_loss(logits[1:], dt[1:], y_normal, torch.tensor([28.0, float("nan")]), 0.0, weights)[0]
+    ce_mixed = torch.nn.functional.cross_entropy(logits[1:], y_normal, reduction="none")
+    assert float(mixed) == pytest.approx((w * float(ce_mixed[0]) + float(ce_mixed[1])) / (w + 1), rel=1e-6)
+
+
+def test_distance_weights_are_off_by_default_per_domain_and_leave_the_time_error_alone():
+    logits = torch.tensor([[2.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    dt = torch.tensor([1.0, 3.0, 50.0])
+    y = torch.tensor([0, 1, 1])
+    tau = torch.tensor([float("nan"), 1.0, 48.0])
+    plain = _config()
+    assert plain.distance_weights == {} and plain.weights_of("ucf_crime") is None
+    old = {k: v for k, v in plain.to_dict().items() if k != "distance_weights"}  # a checkpoint from before D-65
+    assert Config(**old).weights_of("ccd") is None
+
+    off, _ = model_mod.loss({"ccd": (logits, dt)}, {"ccd": (y, tau)}, plain)
+    assert float(off) == pytest.approx(float(torch.nn.functional.cross_entropy(logits, y)) + 4.0, rel=1e-6)
+
+    fixed = _config(distance_weights=model_mod.DISTANCE_WEIGHTS)
+    assert Config(**fixed.to_dict()).weights_of("ucf_crime") == (8.0, 10.0)
+    on, parts = model_mod.loss({"ccd": (logits, dt)}, {"ccd": (y, tau)}, fixed)
+    w = torch.tensor([1.0, math.exp(-1.0), math.exp(-48.0)])
+    ce = (w * torch.nn.functional.cross_entropy(logits, y, reduction="none")).sum() / w.sum()
+    assert float(on) == pytest.approx(float(ce) + 4.0, rel=1e-6) and parts["ccd"]["mse"] == pytest.approx(4.0)
