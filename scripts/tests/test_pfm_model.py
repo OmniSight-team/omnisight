@@ -290,7 +290,7 @@ def _p(scores):
 def test_best_pt_is_chosen_by_the_within_window_auc_and_every_epoch_keeps_the_five_measures(tmp_path, monkeypatch):
     val = {"ucf_crime": _ucf_validation()}
     # epoch 1: every event sample above every normal one (pooled AUC 1.0) but falling as the event nears (within 0);
-    # epoch 2: close above far inside the window (within 3.5 / 4) though the pooled AUC is low (0.25)
+    # epoch 2: close above far inside the window (within 1.0: τ 8 is the only close second) though the pooled AUC is low (0.25)
     epochs = iter([_p([0.9, 0.9, 0.6, 0.6] + [0.1] * 4), _p([0.2, 0.3, 0.5, 0.3] + [0.4] * 4)])
     monkeypatch.setattr(train_mod, "predict", lambda model, data, device="cpu": (next(epochs), np.zeros(len(data))))
 
@@ -300,7 +300,7 @@ def test_best_pt_is_chosen_by_the_within_window_auc_and_every_epoch_keeps_the_fi
 
     first, second = (h["validation"] for h in history)
     assert first["ucf_crime"]["pooled_auc"] == 1.0 and first["score"] == 0.0
-    assert second["ucf_crime"]["pooled_auc"] == pytest.approx(0.25) and second["score"] == pytest.approx(0.875)
+    assert second["ucf_crime"]["pooled_auc"] == pytest.approx(0.25) and second["score"] == 1.0
     assert second["chosen_by"] == "ucf_crime within_window_auc"
     for key in ("within_window_auc", "flat_line", "per_window_auc", "ap", "mtta_s", "pooled_auc", "detection_rate",
                 "theta"):

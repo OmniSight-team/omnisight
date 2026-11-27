@@ -80,7 +80,7 @@ Every measure scores a second by `1 - p(Normal)`. Each is tested on hand-made wi
 7. **Per-window AUC:** each window's highest score, event windows against normal windows
 8. **Pooled AUC:** every second of every window in one pile, as papers report it; for comparison only
 
-- [ ] Code and tests; a printout of how many validation windows each range keeps, per dataset
+- [x] Code and tests; a printout of how many validation windows each range keeps, per dataset
 
 ## OMNI-X19 · Fix 1: distance weights on the class error · Sat morning
 
