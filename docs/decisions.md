@@ -63,6 +63,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-57 | How the PFM is presented: an early warning that tells the operator where to look, not a model that predicts the future; a probability timeline, two levels of claim, chosen clear examples; future work: one big event, reinforcement learning from operators' feedback | 2026-11-25 | Agreed (direction; details at OMNI-906, 912, 913) |
 | D-58 | A UCF-Crime negative window ends at the video's last decoded frame, not past it: 35 normal videos decode 1-20 frames fewer than their container's duration says; their 54 windows are capped, no other window moves | 2026-11-25 | Done |
 | D-59 | The joint PFM: one model for CCD and UCF-Crime, D-56's config except each domain's Δt term weighed by 1 / var(τ); 3 seeds, the epoch and seed chosen on UCF-Crime's validation ROC-AUC; θ_d by the 10% rule on validation; the run record is a file on Drive, not a table | 2026-11-26 | Agreed (written before training) |
+| D-60 | The PFM on held-out: OMNI-905's model and θ_d unchanged; SM-2 per positive window at its last grid point (CCD: top-1 and AUC beside the trivial top-3); SM-3 at the first warning; a scene control (the window's first vector alone) beside every number | 2026-11-27 | Agreed (written before the run) |
 
 ---
 
@@ -1482,3 +1483,31 @@ Written before the training run (OMNI-905, `notebooks/pfm_train_joint_gpu.ipynb`
   checkpoint's SHA-256); `models/pfm/model_runs.json` lists the runs and names the chosen one.
   `scripts/pfm_runs.py download` copies it to `models/trained/pfm/` (checked by SHA-256), where OMNI-910 reads
   `run.json` for `model_run_id` and `θ_d`
+
+## D-60 · How the PFM is measured on held-out data · 2026-11-27
+
+Written before the held-out run (OMNI-906, `notebooks/pfm_heldout_gpu.ipynb`, `scripts/pfm_heldout.py`).
+
+- **The model and the thresholds are fixed:** OMNI-905's chosen run (`pfm-joint-v1-s1-e8`, read from
+  `model_runs.json` and checked by SHA-256) and its `θ_d` from validation. Nothing is chosen or refit on held-out
+- **A warning** is X16's: a sample's most likely class is an event and `max(p) ≥ θ_d`
+- **SM-2, per positive window:** is the window's class in the top 3 at its **last** grid point, the moment with the
+  most lead-up seen, just before the event. One answer per window, so a long window does not count more. The
+  share over all positive samples is reported beside it. **CCD has one event class (Crash) besides Normal, so
+  its top-3 is always met:** it is reported, with top-1 and the ROC-AUC of Crash against Normal beside it as the
+  real measure
+- **SM-3, on CCD's held-out crash clips:** the model runs along the clip (every 0.5 s grid point from the clip's
+  start); the first warning's time to the accident is the clip's lead time. Mean over the clips that warn, the
+  quartiles and a histogram, and how many clips never warn. Target **≥ 1.80 s** (D-23; Phase A's 15 s was revised
+  with DoTA's replacement by CCD, D-2). The ceiling (a warning at the first grid point) is reported beside it
+- **UCF-Crime's lead time:** the same, any event class; the first warning of the **true** class is reported beside
+- **False alarms:** the share of held-out negative windows with any warning, per domain
+- **TC-5, first half:** one row per window (CCD's clips, UCF-Crime's 30 s and 60 s windows separately): top-3
+  at the last point, warned, lead time; `results/omni906_windows.csv` on Drive
+- **The scene control (K-35, K-36):** the same model given, for every sample, only its window's first grid
+  vector: the scene, none of the lead-up. Every measure above is reported for it too. Read: where the control
+  matches the model, that number comes from recognising the scene, not from a lead-up, and the lead time is
+  stated as such (D-57). The timeline (mean `p(event)` per bin of time to the event, model and control) is the
+  figure for it
+- **The failure analysis:** per class, the windows' top-3, warnings, lead time and `p(event)` at the first and
+  last grid point
