@@ -68,6 +68,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-62 | **Deviation:** the PFM may answer only "an event is coming" or Normal (`Config.labels = "event"`: UCF-Crime's 13 event classes merged; CCD unchanged), trained as v2; it replaces v2 only if, on UCF-Crime's validation, its AUC beats v2's by more than the larger seed spread and its rise is not below v2's | 2026-11-27 | Agreed (written before training) |
 | D-63 | **Revision:** SM-2 becomes "an event is coming": held-out UCF-Crime ROC-AUC ≥ 0.70, with false alarms per hour and lead time reported beside it; Phase A's "the true event in the top 3" is still reported for models with classes | 2026-11-27 | Agreed (written before the measurement) |
 | D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the pooled AUC still reported. **Amended before training:** only the event-only model is trained again, each seed's epoch chosen by UCF-Crime's validation within-window AUC; the served model is its best seed by that measure if its flat-line check is ≤ 0.60; v2 is measured for reference only | 2026-11-27 | Agreed (written before any of these numbers was computed; amended before training) |
+| D-65 | **Deviation** (Algorithm 4) and **revision** (SM-2's range): the forecaster trained to forecast: Fix 1 distance-weighted class error, Fix 2 ranking inside the window, versions A, B, C; eight measures; the epoch by UCF-Crime's within-window AUC among epochs passing the flat-line check (≤ 0.60); SM-2 `close` τ [8, 13) s | 2026-11-28 | Agreed (written before training) |
 
 ---
 
@@ -1658,3 +1659,109 @@ picked. And the product asks "is something coming, and when", the event-only mod
 - **v2 is no longer a candidate.** Its old checkpoint (`pfm-joint-v2-mf-s2-e55`) is measured once on the same
   validation, all five measures, for reference only. The margin over v2 (above) is dropped
 - **Held-out once, only for the served model,** all five measures and false alarms per hour; SM-2 as above
+
+## D-65 · The forecaster trained to forecast: Algorithm 4 revised · 2026-11-28
+
+**Deviation** from Phase A's Algorithm 4, and **revision** of SM-2's range (D-64). Written and committed before the
+first training step of `extra-forecaster.md` (OMNI-X17 to X22). **Nothing here changes once a number of these runs
+exists.** It replaces D-64's training and choice (OMNI-917's open items and OMNI-918 are not run); D-56, D-59, D-61
+and D-62 stay where this does not override them.
+
+**Why:** (1) every second of an event window was labelled "Event" at full strength, even 30 s before the event, so
+training asked "say Event everywhere" instead of "rise as the event nears, stay flat on normal footage"; (2) the
+pooled AUC compared seconds of different videos and counted far seconds as events (K-36; "Auditing Frame-Level AUC",
+arXiv 2608.11985); (3) accident anticipation weights each second by its distance to the event (DSA, DSTA, AdaLEA:
+arXiv 2106.10197, 1804.02675), and early detection adds a ranking loss so the score does not drop as the event nears
+(Ma et al., CVPR 2016); (4) joint training of CCD and UCF-Crime was never tested against UCF-Crime alone.
+
+**Seen before this was written, said openly:**
+- OMNI-916's event-only model rose toward the event more than v2 (+0.170 against +0.076, validation), and the
+  within-window AUC asks nearly that question. The **flat-line check is the guard**: a score that only climbs with
+  time, whatever the footage, passes the within-window AUC but fails the check, and such an epoch cannot be chosen
+- Held-out UCF-Crime and CCD were already measured for v1 and v2 (OMNI-906, OMNI-914), with the older measures
+- The data facts (checked 27 Nov, no model involved): UCF-Crime's train and validation windows all end 8-9 s before
+  the event (UCA's times, D-49); held-out's end at the event (official times: 248 of 280 windows have a second under
+  1 s before it). CCD's windows reach the crash (τ from 0.1 s) with about 3.5 s of lead-up. **This is why UCF-Crime's
+  `close` range is [8, 13) s** and not D-64's [0, 10) s, which train and validation never reach
+
+**Algorithm 4, then and now**
+
+| | Phase A | Now |
+|---|---|---|
+| Input | the window's clip vectors | each clip vector minus the window's first (`minus_first`, D-61) |
+| Labels | each dataset's classes | Event or Normal (`labels="event"`, D-62) |
+| Class error | cross-entropy, every second equal | cross-entropy weighted by distance to the event (Fix 1) |
+| Extra error | none | ranking inside the same window (Fix 2) |
+| Time error | MSE of `Δt` | unchanged |
+| Main measure | the true event in the top 3 | within-window AUC + flat-line check |
+| `θ_d` | on validation | unchanged: the 10% rule on validation normal windows (D-59) |
+
+**The measures** (OMNI-X18). Every one scores a grid point ("second"; 1 s on UCF-Crime, 0.5 s on CCD, D-54) by
+`1 − p(Normal)`. Each is tested on hand-made windows with a known answer.
+
+1. **Within-window AUC (the main one).** Inside each event window, every `close` second against every `far` second
+   of the same window: the share where `close` scores higher, ties half. The mean over the windows that have both;
+   the number skipped is reported
+   - UCF-Crime: `close` τ in **[8, 13) s**, `far` τ in **[20, 30) s**, the same on validation and held-out
+   - CCD: `close` τ in [0, 1) s, `far` τ in [2.5, 5) s
+   - Held-out UCF-Crime only: also with `close` τ in [0, 8) s (closer than training saw), reported separately; it
+     is not SM-2
+2. **Flat-line check.** The same inside each normal window, with `τ' = t_last − t` (time back from the window's last
+   second) in place of `τ`, the same ranges. About 0.5 is right; **≤ 0.60 is required** (UCF-Crime's, for the choice)
+3. **Lead time (mTTA):** over the event windows warned at `θ_d`, the mean `τ` of each one's first second at or above
+   `θ_d` (D-64's AP-averaged mTTA is not used)
+4. **Detection rate:** the share of event windows with any second at or above `θ_d`
+5. **False alarms:** the share of normal windows with any second at or above `θ_d`; and alarms per hour of normal
+   footage, a run of consecutive warning seconds being one alarm, the hours being the normal windows' summed spans
+6. **AP:** every distinct window maximum is a warning line; at each, an event window is a hit if any of its seconds
+   reaches it, a normal window a false alarm if any does; the step area under precision-recall
+7. **Per-window AUC:** each window's highest score, event windows against normal windows
+8. **Pooled AUC:** every second of every window in one pile; for comparison only
+
+**Fix 1: distance weights** (OMNI-X19; a `Config` option, off by default, so older checkpoints load as before). An
+event second's cross-entropy is multiplied by `w = exp(−max(0, τ − τ0) / s)`: UCF-Crime `τ0 = 8 s, s = 10 s`; CCD
+`τ0 = 0 s, s = 1 s` (DSTA's setting). Normal seconds weigh 1. A batch's class error is `Σ w·CE / Σ w`. The time
+error (MSE of `Δt` on event seconds) is unchanged.
+
+**Fix 2: ranking inside the same window** (OMNI-X20; a `Config` option, off by default). Each step, beside the usual
+batch, one extra batch per dataset of **64 windows** drawn at random from that dataset's train windows (event and
+normal as they come; a window too short for the gap is not drawn), **two seconds from each**, drawn at random with
+the later at least 5 s after the earlier (UCF-Crime) or 1 s (CCD). Each second is an ordinary sample (its sequence
+from the window's start, D-55, minus the first vector). With `score = 1 − p(Normal)`:
+- event window: `max(0, 0.1 − (score_late − score_early))`
+- normal window: `max(0, score_late − score_early)`
+
+The ranking error is the mean over the pairs, times `λ_rank = 1`.
+
+**Training** (OMNI-X21). One step's total = for each dataset, weighted class error + `α_d` × time error + ranking
+error (B and C only), the datasets' totals added; `α_d = 1 / var(τ)` of that dataset's train positives (D-59).
+Unchanged: one shared Transformer (width 128, 2 layers, 4 heads), one head per dataset (chance of Event, `Δt`);
+`minus_first`; Event or Normal; the fixed split (D-22) and the committed samples; AdamW, lr 3e-4, weight decay 0.01,
+batch 256, gradient clip 1.0; up to 120 epochs, patience 30; seeds 0, 1, 2.
+
+| Version | Datasets | Fix 1 | Fix 2 |
+|---|---|---|---|
+| A | CCD + UCF-Crime | ✓ | |
+| B | CCD + UCF-Crime | ✓ | ✓ |
+| C | UCF-Crime only | ✓ | ✓ |
+
+- **The epoch:** after every epoch all eight measures on validation go into the history. An epoch may become
+  `best.pt` only if its UCF-Crime flat-line check is ≤ 0.60; among those, the highest UCF-Crime within-window AUC
+  wins (the first epoch on a tie). The patience counts epochs since the last such improvement. A seed with no
+  passing epoch has no `best.pt` and is recorded as failed
+- Run ids `pfm-v5{a,b,c}-s{seed}-e{epoch}`, folders `models/pfm/v5-{a,b,c}/`; the old runs stay on Drive and choose
+  nothing. Order on Colab: B, A, C
+
+**The choice and held-out** (OMNI-X22):
+- **Served model:** among the seeds of A and B that have a `best.pt`, the one with the highest UCF-Crime validation
+  within-window AUC (on a tie the lower seed, then A); `θ_d` by the 10% rule on its validation. C is not served (it
+  has no CCD head). If no seed of A or B passed, nothing new is served (the product keeps its current model), the
+  failure is recorded and held-out is not run
+- **What Fix 2 adds:** A's and B's mean and spread (best minus worst seed) of the UCF-Crime validation within-window
+  AUC; a difference is claimed only if it is larger than the larger spread. **Does sharing help:** B against C the
+  same way; if C is clearly better, a follow-up ticket trains separate models per dataset
+- **Held-out once, only for the served model,** all eight measures plus the τ [0, 8) s within-window AUC:
+  - **SM-2 (revised; replaces D-64's range):** held-out UCF-Crime within-window AUC **≥ 0.70**, `close` [8, 13) s,
+    `far` [20, 30) s
+  - **SM-3 (unchanged, D-23):** lead time **≥ 1.80 s** on held-out CCD, measured as measure 3 at `θ_d`
+- Phase A's Algorithm 4 is rewritten after the results, not before
