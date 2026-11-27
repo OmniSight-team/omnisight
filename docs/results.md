@@ -25,7 +25,9 @@ are in `known-issues.md`; how the work went is in `context/`.
 | FR-9, layouts and pins (no Phase A target) | Choose 4x4, pin a camera top-left, reload: both kept | Kept after a reload; the pin held when a camera was added and removed; blocked or broken storage falls back to 3x3 with no pins | **Pass** (one pass) | 2026-10-04 | OMNI-512 |
 | TC-1 | Live camera and uploaded file together: both decode, only motion (or heartbeat) forwarded, the camera live on the wall throughout | 2 runs, 15 of 15 checks each: file 1,930 of 1,930, 356 admitted, 0 violations; live counters exact, every stored row admitted; camera live at every sample | **Pass, complete** | 2026-09-26, 2026-10-03 | OMNI-316, OMNI-511 |
 | NFR-4 (revised, D-19) | 3 live feeds per machine of this class, sustained over 10 min (Phase A: 10) | 3 realistic feeds, wall open, 10 min: 0 dropped, worst 0.17 s, always live. 4: not over 10 min, before and after the one-operation grid (after: 0 dropped, one feed 2 s not live). 10: not (OMNI-509, OMNI-510a) | **Pass** against the revised target (preliminary, one machine) | 2026-10-03, 2026-10-16 | OMNI-509, OMNI-510a, NFR-4 revision, OMNI-613 |
-| SM-3 | **mTTA ≥ 1.80 s** on CCD's held-out crash clips (D-2, rule D-23: half the held-out median pre-event footage, 3.60 s) | - | **Not measured yet** (no model before slice 10) | 2026-10-08 (target) | OMNI-606 |
+| SM-3 | **mTTA ≥ 1.80 s** on CCD's held-out crash clips (D-2, rule D-23: half the held-out median pre-event footage, 3.60 s; Phase A's 15 s revised with CCD) | **3.44 s**, 243 of 243 clips warned, 0.2% of 450 normal clips falsely; ceiling 3.46 s. The scene control (first vector alone) gives 3.45 s: recognised from the scene, not forecast (K-35) | **Pass** (number); not evidence of forecasting | 2026-11-27 | OMNI-906 |
+| SM-2 | The real event in the top 3 for ≥ 70% of held-out positive windows | UCF-Crime **46.8%** (280 windows; 30 s 48.6%, 60 s 45.0%; scene control 38.9%). CCD 100% by construction (one event class): top-1 99.78%, ROC-AUC 0.9999 (D-60) | **Fail** on UCF-Crime; CCD trivially met | 2026-11-27 | OMNI-906 |
+| TC-5, first half | Sliding windows on held-out UCF-Crime (30 s, 60 s) and CCD: top-3 and lead time per clip | 1,273 windows, one row each (`results/omni906_windows.csv`): UCF-Crime top-3 48.6% / 45.0%, lead 18.5 / 27.5 s; CCD top-3 100%, lead 3.44 s | **Done** (produced per clip) | 2026-11-27 | OMNI-906 |
 | UCF-Crime training event times (data for SM-2, SM-4; no Phase A target) | Every event time from an annotation, none guessed | 594 of 810 training anomalies timed from UCA by a written rule (6 not in UCA, 210 no match); against the official start on 110 test anomalies: median 3.0 s, mean 11.3 s apart, 34% within 1 s | **Measured** (D-21) | 2026-10-07 | OMNI-603 |
 | Train / validation / held-out split (data for SM-2, SM-3, SM-4; no Phase A target) | Fixed once, before any window; rebuilds byte-identical | UCF-Crime 1,368 / 242 / 290 (held-out = official test); CCD 3,132 / 675 / 693, no source video on two sides; VIRAT 275 evaluation; seed 605, SHA-256 recorded | **Fixed** (D-22) | 2026-10-08 | OMNI-605 |
 | Lead-up windows (data for SM-2, SM-3, SM-4; no Phase A target) | Every timed event has its windows or a recorded reason; exported and hashed | UCF-Crime 680 positive per L (30 s, 60 s), 950 negative per L; 67% / 84% shortened; 54 events at 0 s, 216 untimed, 16 second intervals skipped. CCD 1,500 positive (3.0-4.9 s), 3,000 negative. SHA-256 recorded | **Derived** (D-24); hand check pending (OMNI-609) | 2026-10-09 | OMNI-607 |
@@ -2739,3 +2741,67 @@ The chosen model on **validation**:
 
 **Not covered:** held-out (OMNI-906); a control for K-35 and K-36 (e.g. the first vector alone, or the window's
 first seconds only); per class.
+
+## OMNI-906 · The PFM on held-out data: SM-2, SM-3, false alarms, TC-5 (first half) · 2026-11-27
+
+Colab, one Tesla T4, torch 2.14.1+cu130, commit `8968bf0`, `notebooks/pfm_heldout_gpu.ipynb`; `results/omni906_heldout.json`,
+`results/omni906_windows.csv` and `results/omni906_timeline.png` on Drive. Model `pfm-joint-v1-s1-e8` and its `θ_d`
+(both at the floor) unchanged from OMNI-905; rules in D-60, written before the run. Held-out: CCD 693 clips (243
+crash, 450 normal), 5,337 samples; UCF-Crime 290 videos, 580 windows (140 positive and 150 negative per length), 17,442
+samples. **Control:** the same model given only each window's first grid vector.
+
+| Domain | Input | ROC-AUC | Top-1 | SM-2: top-3, windows | Top-1, windows | `Δt` error (always the mean) | False alarms | Warned | Lead (quartiles) | Ceiling |
+|---|---|---|---|---|---|---|---|---|---|---|
+| CCD | model | 0.9999 | 0.9978 | 1.000 | 1.000 | 0.53 s (1.01) | 0.2% of 450 | 243 / 243 | **3.44 s** (3.1, 3.6, 4.1) | 3.46 s |
+| CCD | control | 0.9996 | 0.9968 | 1.000 | 0.992 | 2.00 s | 0.0% | 241 / 243 | 3.45 s | 3.45 s |
+| UCF-Crime | model | 0.9180 | 0.6554 | **0.468** | 0.146 | 13.25 s (11.88) | 9.0% of 300 | 212 / 280 | 23.01 s (7, 23, 29) | 23.97 s |
+| UCF-Crime | control | 0.9210 | 0.6340 | 0.389 | 0.132 | 15.47 s | 3.7% | 177 / 280 | 23.19 s | 23.19 s |
+| UCF-Crime 30 s | model | 0.9235 | 0.6414 | 0.486 | 0.129 | 11.93 s (7.44) | 8.0% of 150 | 106 / 140 | 18.49 s (7, 22.5, 29) | 19.18 s |
+| UCF-Crime 60 s | model | 0.9142 | 0.6643 | 0.450 | 0.164 | 14.15 s (14.12) | 10.0% of 150 | 106 / 140 | 27.53 s (7, 23, 51) | 28.77 s |
+
+- **SM-3 passes by its number: 3.44 s ≥ 1.80 s,** every crash clip warned, 1 of 450 normal clips falsely. Lead
+  times 1.5-5 s (1 clip 1.5-2 s, 41 2.5-3 s, 78 3-3.5 s, 57 3.5-4 s, 45 4-4.5 s, 21 4.5-5 s). But every clip warns
+  at about its first grid point (ceiling 3.46 s) and the **control does the same from the first vector alone**
+  (3.45 s, AUC 0.9996): CCD's crash clips are recognised from the scene (K-35), not forecast
+- **SM-2 fails on UCF-Crime: 46.8%** of positive windows have their class in the top 3 at the last point (target
+  70%); 41.1% over all positive samples. The full sequence helps over the control (38.9%; the first warning is the
+  true class in 69 windows against 37): the lead-up says something about *which* crime, little about *whether*
+- **UCF-Crime's "an event is coming" is the scene (K-36 confirmed on held-out):** the control's AUC (0.921) equals
+  the model's (0.918), and its lead time too (23.2 s against 23.0 s). The model's mean `p(event)` on lead-up samples
+  does not rise as the event nears: 0.76 at 50-55 s before it, 0.68 at 20-30 s, 0.63 in the last 5 s (control
+  0.66-0.72, flat); normal windows 0.07 at their first point. `Δt` is worse than always answering the mean
+- **False alarms** stay within the 10% rule set on validation: CCD 0.2%, UCF-Crime 9.0% (30 s 8.0%, 60 s 10.0%)
+
+**Failure analysis (UCF-Crime, per class; top-3 at the last point, share warned):**
+
+| Class | Windows | Top-3 | Warned | Lead / ceiling | `p(event)` first → last |
+|---|---|---|---|---|---|
+| Robbery | 10 | 1.00 | 0.60 | 13.4 / 16.2 s | 0.61 → 0.58 |
+| Stealing | 10 | 0.80 | 1.00 | 29.5 / 30.4 s | 0.72 → 0.91 |
+| Arson | 18 | 0.78 | 0.89 | 27.7 / 25.6 s | 0.79 → 0.81 |
+| Shoplifting | 42 | 0.74 | 0.79 | 28.5 / 29.6 s | 0.64 → 0.58 |
+| RoadAccidents | 46 | 0.65 | 0.67 | 8.6 / 9.8 s | 0.63 → 0.44 |
+| Vandalism | 10 | 0.50 | 1.00 | 24.0 / 24.0 s | 0.94 → 0.99 |
+| Explosion | 42 | 0.38 | 0.67 | 24.3 / 22.3 s | 0.64 → 0.57 |
+| Burglary | 26 | 0.35 | 0.77 | 20.2 / 19.4 s | 0.76 → 0.75 |
+| Fighting | 10 | 0.20 | 0.40 | 21.5 / 15.8 s | 0.36 → 0.38 |
+| Shooting | 46 | 0.11 | 0.87 | 25.2 / 25.7 s | 0.81 → 0.75 |
+| Arrest | 10 | 0.10 | 0.60 | 36.7 / 38.5 s | 0.43 → 0.39 |
+| Abuse | 4 | 0.00 | 1.00 | 20.3 / 20.3 s | 0.99 → 1.00 |
+| Assault | 6 | 0.00 | 0.67 | 34.0 / 30.0 s | 0.23 → 0.34 |
+
+(Lead is over the class's windows that warned; the ceiling is over all its windows.)
+
+- **What the failures share:** the classes that fail are about **what people do to each other** (Abuse,
+  Assault, Arrest, Fighting, Shooting: top-3 0-0.20). Their scenes are streets, rooms and shops like other
+  classes', so the scene cannot tell them apart. Where the **place** names the class (shops: Shoplifting, Stealing,
+  Robbery; roads: RoadAccidents; fire: Arson) top-3 is 0.65-1.00. Shooting warns (0.87) but as another crime
+- `p(event)` rises from the first to the last point only in Stealing, Vandalism, Assault and Arson; in most classes it
+  falls as the event nears
+- Small classes: Abuse 4, Assault 6 windows (2 and 3 videos per length); their numbers are fragile
+
+**SM-2's target is not revised:** lowering it to the measured 47% would fit the target to the result. It is
+recorded as not met; the reason is K-36.
+
+**Not covered:** other seeds or models on held-out (one chosen model only); a model trained without the scene
+(for example on differences between consecutive vectors); TC-5's second half.
