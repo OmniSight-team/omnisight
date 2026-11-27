@@ -84,10 +84,12 @@ def _but_epochs(config: dict) -> dict:
 
 
 def train(config: Config, data: dict[str, Data], out: Path, seed: int, *, device="cpu", stop_after: int | None = None,
-          validate=None, log=print) -> tuple[PFM, list[dict]]:
+          validate=None, patience: int | None = None, log=print) -> tuple[PFM, list[dict]]:
     """Train to `config.epochs` (or stop after epoch `stop_after`), resuming from `{out}/last.pt`.
     `validate(model) -> dict` with a `score`, if given, runs after every epoch: its result goes in the
-    history and the best-scoring epoch is saved to `{out}/best.pt`."""
+    history and the best-scoring epoch is saved to `{out}/best.pt`. With `patience` (and `validate`),
+    training stops early once `patience` epochs in a row have not beaten the best (OMNI-914, D-61); a
+    resumed run that had already stopped trains no further."""
     out.mkdir(parents=True, exist_ok=True)
     checkpoint = out / "last.pt"
     torch.manual_seed(seed)
@@ -104,6 +106,9 @@ def train(config: Config, data: dict[str, Data], out: Path, seed: int, *, device
         log(f"resumed after epoch {start}")
     for epoch in range(start, config.epochs):
         if stop_after is not None and epoch >= stop_after:
+            break
+        if patience is not None and validate is not None and epoch - best["epoch"] >= patience:
+            log(f"stopped early: no better validation for {patience} epochs since epoch {best['epoch']}")
             break
         began = time.perf_counter()
         torch.manual_seed(seed * 10_007 + epoch)  # this epoch's dropout

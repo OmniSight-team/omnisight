@@ -233,3 +233,20 @@ def test_minus_first_ignores_what_the_whole_window_shares_and_old_configs_stay_r
     assert Config(**old).input == "raw"
     with pytest.raises(ValueError):
         _config(input="minus_last")
+
+
+def test_early_stopping_ends_after_patience_epochs_without_a_better_score_and_stays_stopped(tmp_path):
+    data = _ccd(48)
+    config = _config(domains=["ccd"], epochs=10)
+    scores = iter([0.5, 0.9, 0.7, 0.9, 0.6, 0.95, 0.8, 0.8, 0.8, 0.8])
+    messages = []
+
+    def validate(model):
+        return {"score": next(scores)}
+
+    _, history = train_mod.train(config, {"ccd": data}, tmp_path, seed=0, validate=validate, patience=3,
+                                 log=messages.append)
+    # best at 2, then 3 epochs not better (the tie at 4 does not count), stop: epochs 1-5 trained
+    assert [h["epoch"] for h in history] == [1, 2, 3, 4, 5] and "stopped early" in messages[-1]
+    _, again = train_mod.train(config, {"ccd": data}, tmp_path, seed=0, validate=validate, patience=3, log=lambda m: None)
+    assert len(again) == 5  # a resumed run that had stopped trains no further
