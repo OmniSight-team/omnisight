@@ -106,3 +106,19 @@ def test_rise_is_p_event_near_the_event_minus_far_from_it():
     p = np.zeros((6, 14))
     p[:, 0], p[:, 1] = 1 - event, event
     assert held.rise(data, p) == pytest.approx(0.8 - 0.2)  # the normal sample is not counted
+
+
+def test_a_merged_model_keeps_the_crime_names_per_window_and_false_alarms_are_counted_per_hour():
+    samples = [{"label": "Abuse", "tau_s": str(3 - t), "clip_key": "a", "nominal_length_s": "30", "t_s": str(t)}
+               for t in (0, 1, 2)]
+    samples += [{"label": "Normal", "tau_s": "", "clip_key": "n", "nominal_length_s": "30", "t_s": str(t)}
+                for t in (3, 0, 1, 2, 4, 5)]  # out of time order
+    data = train_mod.Data(None, samples, range(len(samples)), "ucf_crime").for_labels("event")
+    event = np.array([0.2, 0.7, 0.9,   0.8, 0.9, 0.1, 0.8, 0.2, 0.9])  # n in time order: warn, no, warn, warn, no, warn
+    p = np.stack([1 - event, event], axis=1)
+    out = held.measure(data, p, np.zeros(len(p)), theta=0.5, step=5.0)
+    assert out["windows"][0]["label"] == "Abuse" and out["windows"][0]["first_warning"] == "Event"
+    assert out["windows"][0]["lead_s"] == 2.0 and sorted(out["by_class"]) == ["Abuse", "Normal"]
+    s = out["summary"]
+    assert s["false_alarms"] == 3 and s["normal_hours"] == pytest.approx(6 / 3600)
+    assert s["false_alarms_per_hour"] == pytest.approx(1800.0)

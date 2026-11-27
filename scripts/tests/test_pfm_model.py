@@ -250,3 +250,24 @@ def test_early_stopping_ends_after_patience_epochs_without_a_better_score_and_st
     assert [h["epoch"] for h in history] == [1, 2, 3, 4, 5] and "stopped early" in messages[-1]
     _, again = train_mod.train(config, {"ccd": data}, tmp_path, seed=0, validate=validate, patience=3, log=lambda m: None)
     assert len(again) == 5  # a resumed run that had stopped trains no further
+
+
+def test_event_labels_merge_ucf_crime_into_one_event_class_and_old_configs_keep_their_classes():
+    model = PFM(_config(labels="event")).eval()
+    x, mask = torch.randn(3, 4, 16), torch.ones(3, 4, dtype=torch.bool)
+    with torch.no_grad():
+        assert model(x, mask, "ucf_crime")[0].shape == (3, 2) and model(x, mask, "ccd")[0].shape == (3, 2)
+    old = {k: v for k, v in _config().to_dict().items() if k != "labels"}  # a checkpoint from before D-62
+    assert Config(**old).labels == "classes" and PFM(Config(**old)).heads["ucf_crime"].out_features == 15
+    with pytest.raises(ValueError):
+        _config(labels="binary")
+
+    samples = [{"label": label, "tau_s": "3" if label != "Normal" else "", "clip_key": label, "nominal_length_s": "30",
+                "t_s": "1"} for label in ("Normal", "Abuse", "Vandalism")]
+    data = train_mod.Data(None, samples, range(3), "ucf_crime")
+    events = data.for_labels("event")
+    assert events.names == ["Normal", "Event"] and events.y.tolist() == [0, 1, 1]
+    assert events.label.tolist() == ["Normal", "Abuse", "Vandalism"] and data.y.tolist() == [0, 1, 13]  # unchanged
+    assert data.for_labels("classes").y.tolist() == [0, 1, 13] and events.subset([2]).names == ["Normal", "Event"]
+    ccd = _ccd(8)
+    assert ccd.for_labels("event").y.tolist() == ccd.y.tolist() and ccd.for_labels("event").names == ["Normal", "Crash"]

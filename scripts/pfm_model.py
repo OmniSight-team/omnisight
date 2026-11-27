@@ -19,6 +19,9 @@ has no event, so no `τ`).
 vector minus its window's first vector, so what never changes in the window (the place) cancels out and only what
 changes is left (OMNI-914, K-36). Done inside the model, so serving it needs nothing else.
 
+**The labels** (`Config.labels`, D-62): `classes`, each domain's own classes (as above), or `event`, every event class
+merged into one, so a head answers only "an event is coming" or Normal (OMNI-916). CCD is the same either way.
+
 Every setting is in `Config`, saved with each checkpoint.
 """
 
@@ -38,6 +41,13 @@ CLASSES = {
 
 
 INPUTS = ("raw", "minus_first")
+LABELS = ("classes", "event")
+
+
+def class_names(domain: str, labels: str = "classes") -> list[str]:
+    """The classes a head of `domain` answers with: its own, or Normal and one merged Event (D-62)."""
+    names = CLASSES[domain]
+    return names if labels == "classes" or len(names) == 2 else ["Normal", "Event"]
 
 
 @dataclass
@@ -58,10 +68,13 @@ class Config:
     batch: int = 256
     epochs: int = 30
     input: str = "raw"  # or "minus_first" (D-61); a checkpoint saved before D-61 is raw
+    labels: str = "classes"  # or "event" (D-62); a checkpoint saved before D-62 is classes
 
     def __post_init__(self) -> None:
         if self.input not in INPUTS:
             raise ValueError(f"input {self.input!r}, expected one of {INPUTS}")
+        if self.labels not in LABELS:
+            raise ValueError(f"labels {self.labels!r}, expected one of {LABELS}")
 
     def lam(self, domain: str) -> float:
         return self.lambdas.get(domain, 1.0)
@@ -84,7 +97,7 @@ class PFM(nn.Module):
                                            batch_first=True, norm_first=True)
         self.backbone = nn.TransformerEncoder(layer, config.layers, norm=nn.LayerNorm(config.width),
                                               enable_nested_tensor=False)
-        self.heads = nn.ModuleDict({d: nn.Linear(config.width, len(CLASSES[d]) + 1) for d in config.domains})
+        self.heads = nn.ModuleDict({d: nn.Linear(config.width, len(class_names(d, config.labels)) + 1) for d in config.domains})
         nn.init.normal_(self.summary, std=0.02)
 
     def backbone_out(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:

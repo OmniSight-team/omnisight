@@ -10,6 +10,9 @@ analysis and the scene control (rules in D-60, written before the run).
   lead. A negative window is a false alarm if any of its samples warns
 - **The scene control** (`FirstVector`): the same model, each sample given only its window's first grid
   vector, so it sees the scene but none of the lead-up. Measured exactly as the model
+- **False alarms per hour** (`false_alarms_per_hour`, D-63): on the negative windows, each run of consecutive
+  warning samples is one alarm; divided by the hours of normal footage the samples cover (one grid step each). The
+  30 s and 60 s windows of a video overlap, so some footage counts twice, in both the alarms and the hours
 - **The timeline** (`timeline`): the mean `1 - p(Normal)` of the positive samples per bin of time to the
   event, beside that of the negative samples: a forecaster's rises as the event nears
 
@@ -22,7 +25,6 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pfm_model import CLASSES
 from train_pfm import Data, _roc_auc
 
 
@@ -52,7 +54,7 @@ def warnings(p: np.ndarray, theta: float) -> np.ndarray:
 
 def windows(data: Data, p: np.ndarray, theta: float) -> list[dict]:
     """One row per window (TC-5's per-clip table), its samples in time order."""
-    names = CLASSES[data.domain]
+    names = data.names
     warns, top3 = warnings(p, theta), np.argsort(-p, axis=1)[:, :3]
     out = []
     for w in dict.fromkeys(data.window):
@@ -62,7 +64,7 @@ def windows(data: Data, p: np.ndarray, theta: float) -> list[dict]:
         if (data.y[rows] != y).any():
             raise ValueError(f"window {w} mixes classes")
         clip, length = w.rsplit("|", 1)
-        row = {"clip_key": clip, "length_s": length, "label": names[y], "samples": len(rows),
+        row = {"clip_key": clip, "length_s": length, "label": str(data.label[rows[0]]), "samples": len(rows),
                "warned": bool(warns[rows].any()), "p_event_first": float(1 - p[rows[0], 0]),
                "p_event_last": float(1 - p[last, 0])}
         if y:
@@ -145,11 +147,26 @@ def rise(data: Data, p: np.ndarray, near=(0.0, 10.0), far=(20.0, 30.0)) -> float
     return mean(*near) - mean(*far)
 
 
+def false_alarms_per_hour(data: Data, p: np.ndarray, theta: float) -> dict:
+    """D-63: alarms on normal footage per hour of it; an alarm is a run of consecutive warning samples."""
+    warns, alarms, seconds = warnings(p, theta), 0, 0.0
+    for w in dict.fromkeys(data.window[data.y == 0]):
+        rows = np.flatnonzero(data.window == w)
+        order = np.argsort(data.t_s[rows])
+        rows, t = rows[order], data.t_s[rows][order]
+        on = warns[rows]
+        alarms += int(on[0]) + int((on[1:] & ~on[:-1]).sum())
+        seconds += len(rows) * (float(np.median(np.diff(t))) if len(t) > 1 else 0.0)
+    hours = seconds / 3600
+    return {"false_alarms": alarms, "normal_hours": hours, "false_alarms_per_hour": alarms / hours if hours else None}
+
+
 def measure(data: Data, p: np.ndarray, dt: np.ndarray, theta: float, step: float) -> dict:
     """Everything for one domain and one input (the model or the control): the window rows, the summary
     (overall and per nominal length when there are several), the classes and the timeline."""
     rows = windows(data, p, theta)
-    out = {"summary": {**summary(data, p, dt, rows), "rise": rise(data, p)}, "by_class": by_class(rows), "timeline": timeline(data, p, step),
+    out = {"summary": {**summary(data, p, dt, rows), "rise": rise(data, p), **false_alarms_per_hour(data, p, theta)},
+           "by_class": by_class(rows), "timeline": timeline(data, p, step),
            "windows": rows}
     lengths = sorted({r["length_s"] for r in rows})
     if len(lengths) > 1:
@@ -158,5 +175,5 @@ def measure(data: Data, p: np.ndarray, dt: np.ndarray, theta: float, step: float
             which = np.array([w.rsplit("|", 1)[1] == length for w in data.window])
             part = data.subset(which)
             out["per_length"][length] = {**summary(part, p[which], dt[which], [r for r in rows if r["length_s"] == length]),
-                                         "rise": rise(part, p[which])}
+                                         "rise": rise(part, p[which]), **false_alarms_per_hour(part, p[which], theta)}
     return out

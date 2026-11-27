@@ -33,19 +33,21 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pfm_model import CLASSES, PFM, Config, loss
+from pfm_model import CLASSES, PFM, Config, class_names, loss
 from pfm_samples import Store
 
 FALSE_ALARM = 0.10
 
 
 class Data:
-    """One domain's samples of one split, with their vectors in `store`."""
+    """One domain's samples of one split, with their vectors in `store`. `y` indexes `names`; `label` keeps
+    each sample's own class (for the per-class analysis when the classes are merged, D-62)."""
 
     def __init__(self, store: Store, samples: list[dict], rows, domain: str) -> None:
         rows = np.asarray(rows, np.int64)
         names = CLASSES[domain]
-        self.store, self.domain, self.rows = store, domain, rows
+        self.store, self.domain, self.rows, self.names = store, domain, rows, names
+        self.label = np.array([samples[r]["label"] for r in rows])
         self.y = np.array([names.index(samples[r]["label"]) for r in rows], np.int64)
         self.tau = np.array([float(samples[r]["tau_s"]) if samples[r]["tau_s"] != "" else np.nan for r in rows],
                             np.float32)
@@ -61,9 +63,17 @@ class Data:
 
     def subset(self, which) -> "Data":
         part = object.__new__(Data)
-        part.store, part.domain = self.store, self.domain
-        for name in ("rows", "y", "tau", "window", "t_s"):
+        part.store, part.domain, part.names = self.store, self.domain, self.names
+        for name in ("rows", "y", "label", "tau", "window", "t_s"):
             setattr(part, name, getattr(self, name)[which])
+        return part
+
+    def for_labels(self, labels: str) -> "Data":
+        """The same samples with `y` in the classes a model with `Config.labels = labels` answers (D-62)."""
+        names = class_names(self.domain, labels)
+        part = self.subset(slice(None))
+        part.names = names
+        part.y = np.array([names.index(l) if l in names else names.index("Event") for l in part.label], np.int64)
         return part
 
     def tensors(self, which, max_length: int, device) -> tuple[torch.Tensor, ...]:
