@@ -57,6 +57,7 @@ are in `known-issues.md`; how the work went is in `context/`.
 | SM-1 | The correct clip in the top 5 for at least 85% of queries, with a lift on action queries over a frame-only baseline | After D-40: fused 76.0% overall (frame only 74.0%, clip only 46.0%, B.3 as written 60.0%). Action queries: fused 60.0%, frame only 60.0%, no lift. Scene queries: fused 92.0%, frame only 88.0%. Chance 25.1% | **Measured** (D-41): 85% and the lift on actions not met; no published result supports them (preliminary: 50 queries by one author) | 2026-10-31 | OMNI-713, D-40 |
 | SM-1 with Cosmos-Embed1 as the clip encoder (OMNI-X14, D-50; exploration) | Switch if fused beats frame only on action queries **and** fused overall is at least InternVideo2's 76.0% (rule written before the run) | Better spacing A (1 s): fused 74.0% overall, scene 88.0%, action 60.0% (frame only 60.0%: no lift). Clip only 54.0% (InternVideo2 46.0%), on actions 44.0% (InternVideo2 32.0%). B (4 s): fused 74.0%, clip only 46.0%, on actions 28.0%. GPU per clip, A100, the same 64 clips: InternVideo2 186 ms (float32), Cosmos A 177 ms, B 166 ms (BF16) | **Keep InternVideo2** (neither condition met; preliminary: 50 queries by one author) | 2026-11-23 | OMNI-X14 |
 | The PFM's clip encoder on CCD (OMNI-X16, D-53; validation, exploration) | Cosmos only if its mean AUC beats InternVideo2's by more than the larger seed spread **and** its lead time is not lower (rule written before training) | AUC: InternVideo2 1.0000 (spread 0.0000), Cosmos 0.9998 (spread 0.0003). Lead time 3.49 s both, the ceiling: every crash warned at its first sample (K-35). Top-1 0.9992 against 0.9955; Δt error 0.517 against 0.521 s. 3 seeds each, L4 | **Keep InternVideo2** (Cosmos not ahead; CCD saturates both) | 2026-11-25 | OMNI-X16 |
+| Which PFM the product serves (OMNI-914, D-61; validation) | `minus_first` replaces v1 if UCF-Crime's validation AUC ≥ 0.70 **and** its rise ≥ +0.05 (rule written before training) | `pfm-joint-v2-mf-s2-e55`: AUC **0.7293**, rise **+0.076** (v1: AUC 0.9579, rise +0.009). Best of 3 seeds (0.7099-0.7293) | **Met: v2 chosen**; it detects worse (AUC, top-3) but is the only one that rises toward the event | 2026-11-27 | OMNI-914 |
 | Boxes on search results (addition, D-42; no Phase A target) | Labelled boxes on the right thing; record how many are right, wrong or missing | 4 queries in VIRAT video 3230, top 5 each, by eye: *a blue car* 5 of 5 on the blue pickup (top box each time) and 10 more on other parked cars; *a person walking* 5 of 5; *a white truck* none in the footage, 15 boxes all on real vehicles; *a person opening a trunk* the person at the truck boxed in 1 of 4 frames (3 missed). 0 boxes on a non-vehicle or non-person. On screen: thumbnails, the paused player (video 3231) and the live viewer (camera 2446) | **Measured** (preliminary: one look, one person, no ground truth, one video) | 2026-11-05 | OMNI-X02 |
 | YOLO-World cost on this laptop's CPU (D-42; no Phase A target) | ms per frame and for 5 frames; ai_workers still fits Docker's 7.6 GiB | 1 frame: median 397 ms (290-570, 20 calls); 5 frames: median 2.64 s (1.60-3.62, 20 calls); the first box request after a start 11.2 s, then 2.9-4.2 s. ai_workers 2.31 GiB idle after start, 3.44 GiB after the run | **Fits** (preliminary: one run, the embed queue idle) | 2026-11-05 | OMNI-X02 |
 | FR-9, dashboard aggregates (no Phase A target) | The summary's counts equal a direct count; both endpoints measured with the archive at full size | Equal to a direct count before and after an upload, a re-gate and a delete on the real pipeline. 146,807 rows (D-26's archive): summary p50 41 ms, p95 72 ms; activity p50 15 ms, p95 36 ms, 100 calls each | **Pass** (preliminary: two runs, one machine; storage misses 1.05 GB of orphan files, K-21) | 2026-10-11 | OMNI-610 |
@@ -2805,3 +2806,38 @@ recorded as not met; the reason is K-36.
 
 **Not covered:** other seeds or models on held-out (one chosen model only); a model trained without the scene
 (for example on differences between consecutive vectors); TC-5's second half.
+
+## OMNI-914 · The PFM with the scene removed from its input, chosen on validation · 2026-11-27
+
+Colab, one NVIDIA L4, `notebooks/pfm_train_minus_first_gpu.ipynb`; `results/omni914_joint.json` on Drive. D-61: each
+clip vector minus its window's first (`Config.input = "minus_first"`), otherwise D-59's setup (both domains, the same
+`α`, the epoch on UCF-Crime's validation ROC-AUC, `θ_d` by the 10% rule). Up to 120 epochs, early stopping with
+patience 30, 3 seeds from scratch (`models/pfm/joint-minus-first-p30/`).
+
+| Seed | Best epoch | UCF-Crime val AUC at it | At its last epoch | CCD val AUC |
+|---|---|---|---|---|
+| 0 | 63 | 0.7277 | 0.7180 (stopped at 93) | 0.9809 |
+| 1 | 97 | 0.7099 | 0.6883 (120, the limit) | 0.9789 |
+| 2 | **55** | **0.7293** | 0.7109 (stopped at 85) | 0.9827 |
+
+**Chosen: `pfm-joint-v2-mf-s2-e55`**, on validation, beside v1 (`pfm-joint-v1-s1-e8`, OMNI-905):
+
+| Domain | Model | ROC-AUC | Top-1 | Top-3 (positives) | Δt error | θ_d | Negative windows warned | Positive windows warned | Lead time |
+|---|---|---|---|---|---|---|---|---|---|
+| CCD | v2 | 0.9827 | 0.9327 | 1.0000 | 0.52 s | floor | 8.9% of 450 | 224 / 225 | 2.90 s |
+| CCD | v1 | 1.0000 | 0.9998 | 1.0000 | 0.51 s | floor | 0.2% of 450 | 225 / 225 | 3.49 s |
+| UCF-Crime | v2 | 0.7293 | 0.7195 | 0.2523 | 13.04 s | 0.978 | 10.0% of 240 | 32 / 114 | 25.16 s |
+| UCF-Crime | v1 | 0.9579 | 0.8000 | 0.5164 | 13.11 s | floor | 10.0% of 240 | 92 / 114 | 27.91 s |
+
+- **D-61's rule is met:** AUC 0.7293 ≥ 0.70 and rise +0.076 ≥ +0.05, so v2 is registered as the chosen run.
+  v1's rise on the same validation samples is +0.009: v2's `p(event)` grows as the event nears, v1's does not
+- **Without the place, the model is a weaker detector:** UCF-Crime AUC 0.96 → 0.73, which crime (top-3) 0.52 → 0.25,
+  and to keep false alarms at 10% its `θ` rises to 0.978 (v1's was at the floor), so 32 of 114 positive windows warn
+  against 92. CCD stays high (0.98) but its false alarms rise from 0.2% to 8.9% and its lead from 3.49 to 2.90 s.
+  Much of v1's score was the place (K-36); what is left is the change within the window
+- **It learns slowly:** best epochs 55-97 (v1: 1-10); seed 1 was still at 0.7099 when it reached the 120-epoch limit
+- `Δt` is still not learned (13.04 s; always the mean: 11.67 s)
+
+**Not covered:** held-out (next: `notebooks/pfm_heldout_gpu.ipynb` with this run id); each seed's score at epoch 30
+(in the checkpoints' history, not printed); the earlier runs under patience 15 (`joint-minus-first/`), which choose
+nothing.

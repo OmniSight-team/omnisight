@@ -1547,3 +1547,7 @@ and its `p(event)` does not rise as the event nears (K-35, K-36).
   so the checkpoints already made (seed 0 at 30, seed 1 at 12) continue and make the same epochs as a straight run.
   Seen on validation only, as D-59 allows. **Said plainly:** 0.71 is just above the rule's 0.70, which was set
   before; the rule's thresholds stay as written, and each seed's score at epoch 30 is reported beside its best
+- **Amended again, 2026-11-27: patience 30, from scratch.** With patience 15 seed 2 stopped at epoch 18 (its best
+  at epoch 3, 0.643), before the slow climb seed 0 showed after epoch 20. Patience 30, and all three seeds trained
+  again from epoch 1 in a new folder (`models/pfm/joint-minus-first-p30/`), so every seed ran under the same rule;
+  the earlier folder (`joint-minus-first/`) is kept as it was and chooses nothing. Rule and thresholds unchanged
