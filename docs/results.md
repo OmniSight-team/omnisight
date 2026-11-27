@@ -26,7 +26,7 @@ are in `known-issues.md`; how the work went is in `context/`.
 | TC-1 | Live camera and uploaded file together: both decode, only motion (or heartbeat) forwarded, the camera live on the wall throughout | 2 runs, 15 of 15 checks each: file 1,930 of 1,930, 356 admitted, 0 violations; live counters exact, every stored row admitted; camera live at every sample | **Pass, complete** | 2026-09-26, 2026-10-03 | OMNI-316, OMNI-511 |
 | NFR-4 (revised, D-19) | 3 live feeds per machine of this class, sustained over 10 min (Phase A: 10) | 3 realistic feeds, wall open, 10 min: 0 dropped, worst 0.17 s, always live. 4: not over 10 min, before and after the one-operation grid (after: 0 dropped, one feed 2 s not live). 10: not (OMNI-509, OMNI-510a) | **Pass** against the revised target (preliminary, one machine) | 2026-10-03, 2026-10-16 | OMNI-509, OMNI-510a, NFR-4 revision, OMNI-613 |
 | SM-3 | **mTTA ≥ 1.80 s** on CCD's held-out crash clips (D-2, rule D-23: half the held-out median pre-event footage, 3.60 s; Phase A's 15 s revised with CCD) | **2.91 s** with the served model (`pfm-joint-v2-mf-s2-e55`, scene removed): 243 of 243 clips warned, 10.4% of 450 normal clips falsely; `p(event)` 0.44 → 0.99 on crash clips, 0.44 → 0.01 on normal. v1: 3.44 s, but its scene control matched it (K-35) | **Pass** | 2026-11-27 | OMNI-906, OMNI-914 |
-| SM-2 | The real event in the top 3 for ≥ 70% of held-out positive windows | UCF-Crime **22.5%** with the served model (v2, 280 windows); v1 46.8% (scene control 38.9%). CCD 100% by construction (one event class) | **Fail** on UCF-Crime; CCD trivially met | 2026-11-27 | OMNI-906, OMNI-914 |
+| SM-2 | **Revised (D-63):** an event is coming: held-out UCF-Crime ROC-AUC ≥ 0.70, false alarms per hour and lead time beside it (Phase A: the real event in the top 3 for ≥ 70% of positive windows) | v2 (served): AUC **0.6307**, lead 17.35 s, 10.0% of normal windows warned; per hour with OMNI-916's held-out run. Old top-3: v2 22.5%, v1 46.8% (from the place, K-36) | **Fail** (0.63 < 0.70), pending OMNI-916 | 2026-11-27 | OMNI-906, OMNI-914 |
 | TC-5, first half | Sliding windows on held-out UCF-Crime (30 s, 60 s) and CCD: top-3 and lead time per clip | 1,273 windows, one row each (`results/omni906_windows.csv`): UCF-Crime top-3 48.6% / 45.0%, lead 18.5 / 27.5 s; CCD top-3 100%, lead 3.44 s | **Done** (produced per clip) | 2026-11-27 | OMNI-906 |
 | UCF-Crime training event times (data for SM-2, SM-4; no Phase A target) | Every event time from an annotation, none guessed | 594 of 810 training anomalies timed from UCA by a written rule (6 not in UCA, 210 no match); against the official start on 110 test anomalies: median 3.0 s, mean 11.3 s apart, 34% within 1 s | **Measured** (D-21) | 2026-10-07 | OMNI-603 |
 | Train / validation / held-out split (data for SM-2, SM-3, SM-4; no Phase A target) | Fixed once, before any window; rebuilds byte-identical | UCF-Crime 1,368 / 242 / 290 (held-out = official test); CCD 3,132 / 675 / 693, no source video on two sides; VIRAT 275 evaluation; seed 605, SHA-256 recorded | **Fixed** (D-22) | 2026-10-08 | OMNI-605 |
@@ -58,6 +58,7 @@ are in `known-issues.md`; how the work went is in `context/`.
 | SM-1 with Cosmos-Embed1 as the clip encoder (OMNI-X14, D-50; exploration) | Switch if fused beats frame only on action queries **and** fused overall is at least InternVideo2's 76.0% (rule written before the run) | Better spacing A (1 s): fused 74.0% overall, scene 88.0%, action 60.0% (frame only 60.0%: no lift). Clip only 54.0% (InternVideo2 46.0%), on actions 44.0% (InternVideo2 32.0%). B (4 s): fused 74.0%, clip only 46.0%, on actions 28.0%. GPU per clip, A100, the same 64 clips: InternVideo2 186 ms (float32), Cosmos A 177 ms, B 166 ms (BF16) | **Keep InternVideo2** (neither condition met; preliminary: 50 queries by one author) | 2026-11-23 | OMNI-X14 |
 | The PFM's clip encoder on CCD (OMNI-X16, D-53; validation, exploration) | Cosmos only if its mean AUC beats InternVideo2's by more than the larger seed spread **and** its lead time is not lower (rule written before training) | AUC: InternVideo2 1.0000 (spread 0.0000), Cosmos 0.9998 (spread 0.0003). Lead time 3.49 s both, the ceiling: every crash warned at its first sample (K-35). Top-1 0.9992 against 0.9955; Δt error 0.517 against 0.521 s. 3 seeds each, L4 | **Keep InternVideo2** (Cosmos not ahead; CCD saturates both) | 2026-11-25 | OMNI-X16 |
 | Which PFM the product serves (OMNI-914, D-61; validation) | `minus_first` replaces v1 if UCF-Crime's validation AUC ≥ 0.70 **and** its rise ≥ +0.05 (rule written before training) | `pfm-joint-v2-mf-s2-e55`: AUC **0.7293**, rise **+0.076** (v1: AUC 0.9579, rise +0.009). Best of 3 seeds (0.7099-0.7293) | **Met: v2 chosen**; it detects worse (AUC, top-3) but is the only one that rises toward the event | 2026-11-27 | OMNI-914 |
+| Event-only PFM against v2 (OMNI-916, D-62; validation) | Replaces v2 if UCF-Crime's validation AUC beats v2's by more than the larger seed spread **and** its rise is not below v2's (rule written before training) | `pfm-joint-v3-ev-s0-e118`: AUC 0.7315 against v2's 0.7293 (+0.0022; needed more than +0.0546, its own seed spread, 0.6768-0.7315); rise **+0.170** against +0.076 | **Not met: v2 stays chosen**; the event-only model rises more but detects no better | 2026-11-27 | OMNI-916 |
 | Boxes on search results (addition, D-42; no Phase A target) | Labelled boxes on the right thing; record how many are right, wrong or missing | 4 queries in VIRAT video 3230, top 5 each, by eye: *a blue car* 5 of 5 on the blue pickup (top box each time) and 10 more on other parked cars; *a person walking* 5 of 5; *a white truck* none in the footage, 15 boxes all on real vehicles; *a person opening a trunk* the person at the truck boxed in 1 of 4 frames (3 missed). 0 boxes on a non-vehicle or non-person. On screen: thumbnails, the paused player (video 3231) and the live viewer (camera 2446) | **Measured** (preliminary: one look, one person, no ground truth, one video) | 2026-11-05 | OMNI-X02 |
 | YOLO-World cost on this laptop's CPU (D-42; no Phase A target) | ms per frame and for 5 frames; ai_workers still fits Docker's 7.6 GiB | 1 frame: median 397 ms (290-570, 20 calls); 5 frames: median 2.64 s (1.60-3.62, 20 calls); the first box request after a start 11.2 s, then 2.9-4.2 s. ai_workers 2.31 GiB idle after start, 3.44 GiB after the run | **Fits** (preliminary: one run, the embed queue idle) | 2026-11-05 | OMNI-X02 |
 | FR-9, dashboard aggregates (no Phase A target) | The summary's counts equal a direct count; both endpoints measured with the archive at full size | Equal to a direct count before and after an upload, a re-gate and a delete on the real pipeline. 146,807 rows (D-26's archive): summary p50 41 ms, p95 72 ms; activity p50 15 ms, p95 36 ms, 100 calls each | **Pass** (preliminary: two runs, one machine; storage misses 1.05 GB of orphan files, K-21) | 2026-10-11 | OMNI-610 |
@@ -2872,3 +2873,39 @@ vector alone) is empty by construction on this model (the first vector minus its
 - `Δt` is still not learned (UCF-Crime 13.26 s against 11.88 s for always the mean)
 
 **SM-2's target is not revised** (as OMNI-906). **Not covered:** other seeds on held-out; TC-5's second half.
+
+## OMNI-916 · The event-only PFM against v2, on validation · 2026-11-27
+
+Colab, one NVIDIA L4, `notebooks/pfm_train_event_gpu.ipynb`; `results/omni916_joint.json` on Drive. D-62: UCF-Crime's
+13 event classes merged into one (`Config.labels = "event"`), everything else v2's (`minus_first`, both domains, the
+same samples, splits and `α`, up to 120 epochs, patience 30, 3 seeds). v2 (`pfm-joint-v2-mf-s2-e55`) measured in the
+same notebook on the same validation samples.
+
+| Seed | Best epoch | UCF-Crime val AUC at it | At its last epoch | CCD val AUC |
+|---|---|---|---|---|
+| 0 | **118** | **0.7315** | 0.7169 (120, the limit) | 0.9805 |
+| 1 | 84 | 0.6984 | 0.6739 (stopped at 114) | 0.9811 |
+| 2 | 57 | 0.6768 | 0.6677 (stopped at 87) | 0.9825 |
+
+The best (`pfm-joint-v3-ev-s0-e118`, recorded, not chosen) beside v2, on validation:
+
+| Domain | Model | ROC-AUC | Top-1 | Δt error | θ_d | Negative windows warned | Positive windows warned | Lead time | Rise |
+|---|---|---|---|---|---|---|---|---|---|
+| CCD | event-only | 0.9805 | 0.9314 | 0.55 s | floor | 3.6% of 450 | 222 / 225 | 2.86 s | - |
+| CCD | v2 | 0.9823 | | | floor | 8.9% of 450 | 224 / 225 | 2.90 s | - |
+| UCF-Crime | event-only | 0.7315 | 0.7688 | 13.98 s | 0.9999 | 10.0% of 240 | **43 / 114** | 23.96 s | **+0.170** |
+| UCF-Crime | v2 | 0.7293 | | | 0.978 | 10.0% of 240 | 32 / 114 | 25.16 s | +0.076 |
+
+- **D-62's rule is not met; v2 stays chosen.** The AUC is +0.0022 above v2's, within noise: the event-only model's
+  own seeds spread 0.0546 (0.6768-0.7315), and the rule needed more than that. Its rise (+0.170 against +0.076)
+  passes
+- **What merging the classes changed:** the same ability to tell an event from normal (AUC), but more certainty as
+  the event nears (rise twice v2's), more positive windows warned at the same 10% of normal windows (43 against 32),
+  and fewer CCD false alarms (3.6% against 8.9%). `Δt` slightly worse (13.98 s; v2 13.04 s)
+- **The seeds differ more than v2's** (spread 0.055 against 0.019), and the best seed peaked at epoch 118 of 120, so
+  it may not have finished
+- v2 re-measured here: UCF-Crime AUC 0.7293 as in OMNI-914; CCD 0.9823 against OMNI-914's 0.9827 (the GPU's
+  arithmetic; not investigated)
+
+**Not covered:** held-out for the event-only model (D-62: held-out only for the chosen one, v2); top-1 and `Δt` for v2
+in this side-by-side (printed in OMNI-914: CCD 0.9327 / 0.52 s, UCF-Crime 0.7195 / 13.04 s); more than 120 epochs.

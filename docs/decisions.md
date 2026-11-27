@@ -65,6 +65,8 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-59 | The joint PFM: one model for CCD and UCF-Crime, D-56's config except each domain's Δt term weighed by 1 / var(τ); 3 seeds, the epoch and seed chosen on UCF-Crime's validation ROC-AUC; θ_d by the 10% rule on validation; the run record is a file on Drive, not a table | 2026-11-26 | Agreed (written before training) |
 | D-60 | The PFM on held-out: OMNI-905's model and θ_d unchanged; SM-2 per positive window at its last grid point (CCD: top-1 and AUC beside the trivial top-3); SM-3 at the first warning; a scene control (the window's first vector alone) beside every number | 2026-11-27 | Agreed (written before the run) |
 | D-61 | **Deviation:** the PFM's input may be each clip vector minus its window's first (`minus_first`), so the place cancels out (K-36); trained as D-59; it replaces v1 in the product only if, on UCF-Crime's validation, AUC ≥ 0.70 and the rise ≥ +0.05 | 2026-11-27 | Agreed (written before training) |
+| D-62 | **Deviation:** the PFM may answer only "an event is coming" or Normal (`Config.labels = "event"`: UCF-Crime's 13 event classes merged; CCD unchanged), trained as v2; it replaces v2 only if, on UCF-Crime's validation, its AUC beats v2's by more than the larger seed spread and its rise is not below v2's | 2026-11-27 | Agreed (written before training) |
+| D-63 | **Revision:** SM-2 becomes "an event is coming": held-out UCF-Crime ROC-AUC ≥ 0.70, with false alarms per hour and lead time reported beside it; Phase A's "the true event in the top 3" is still reported for models with classes | 2026-11-27 | Agreed (written before the measurement) |
 
 ---
 
@@ -1551,3 +1553,44 @@ and its `p(event)` does not rise as the event nears (K-35, K-36).
   at epoch 3, 0.643), before the slow climb seed 0 showed after epoch 20. Patience 30, and all three seeds trained
   again from epoch 1 in a new folder (`models/pfm/joint-minus-first-p30/`), so every seed ran under the same rule;
   the earlier folder (`joint-minus-first/`) is kept as it was and chooses nothing. Rule and thresholds unchanged
+
+## D-62 · The PFM answers only "an event is coming", and when it replaces v2 · 2026-11-27
+
+Written before training (OMNI-916, `notebooks/pfm_train_event_gpu.ipynb`).
+
+**Why:** the product needs "something will happen, and when", not which crime. Which crime is weak: v2
+(`pfm-joint-v2-mf-s2-e55`) has the true class in its top 3 for 22.5% of held-out positive windows, its event windows
+split across 13 classes of 4-46 windows each. One "event" class gives the head all of them at once.
+
+- **Deviation from Algorithm 4's heads:** with `Config.labels = "event"` UCF-Crime's head has two classes, Normal and
+  Event; CCD's (Normal, Crash) is the same either way. The `Δt` output, the loss (CE + `α` · MSE) and `κ` are unchanged.
+  The samples keep their own class name (`Data.label`), so the per-class analysis still works. Checkpoints saved
+  before this are `classes`
+- **Everything else is v2's (D-59, D-61):** `minus_first`, both domains, the same `α`, samples and splits, 3 seeds, up
+  to 120 epochs with early stopping (patience 30), the epoch on UCF-Crime's validation ROC-AUC, `θ_d` by the 10% rule
+  on validation. A new run id (`pfm-joint-v3-ev-s{seed}-e{epoch}`); v2 stays on Drive
+- **Which model the product serves, on validation only:** the new model replaces v2 if its UCF-Crime validation
+  ROC-AUC is higher than v2's (0.7293) by **more than the larger seed spread** (the new model's best minus worst
+  seed, or v2's 0.0194, whichever is larger) **and** its rise is **not below v2's** (+0.076), both measured in the
+  same notebook on the same samples. Otherwise v2 stays chosen. Held-out chooses nothing
+- **Reported on validation beside v2,** both domains: AUC, the rise, false alarms, positive windows warned, lead time
+- **Held-out once, only for the chosen model** (`notebooks/pfm_heldout_gpu.ipynb`), with the first-vector control
+  (empty by construction on a `minus_first` model). If v2 stays chosen it is run again, for D-63's false alarms per
+  hour
+- **Not done here:** a merged model without `minus_first`; weighting the classes
+
+## D-63 · SM-2 revised: "an event is coming" instead of "which event" · 2026-11-27
+
+Written before the measurement (OMNI-916).
+
+**Why:** Phase A's SM-2 is "the real event in the top 3 for ≥ 70% of held-out positive windows". The product's
+alert says that something is coming and when, not which crime; and with one event class (D-62) top-3 is always met,
+so the old wording would pass by construction. Measured: v1 46.8% (from the place, K-36), v2 22.5%.
+
+- **SM-2 now:** on held-out UCF-Crime, **ROC-AUC of event against Normal ≥ 0.70** (the floor D-61 already used for
+  "it still tells an event from normal"), for the model the product serves
+- **Reported beside it, no target:** false alarms per hour of normal footage (`pfm_heldout.false_alarms_per_hour`:
+  each run of consecutive warning samples on a negative window is one alarm, over the hours those samples cover; the
+  30 s and 60 s windows of a video overlap, so some footage counts twice) and the lead time at the first warning
+- **Phase A's top-3** is still reported for models with classes (v1, v2), as history; not for a merged model
+- **Not changed:** SM-3 (CCD's lead time, D-23)
