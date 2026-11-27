@@ -64,6 +64,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-58 | A UCF-Crime negative window ends at the video's last decoded frame, not past it: 35 normal videos decode 1-20 frames fewer than their container's duration says; their 54 windows are capped, no other window moves | 2026-11-25 | Done |
 | D-59 | The joint PFM: one model for CCD and UCF-Crime, D-56's config except each domain's Δt term weighed by 1 / var(τ); 3 seeds, the epoch and seed chosen on UCF-Crime's validation ROC-AUC; θ_d by the 10% rule on validation; the run record is a file on Drive, not a table | 2026-11-26 | Agreed (written before training) |
 | D-60 | The PFM on held-out: OMNI-905's model and θ_d unchanged; SM-2 per positive window at its last grid point (CCD: top-1 and AUC beside the trivial top-3); SM-3 at the first warning; a scene control (the window's first vector alone) beside every number | 2026-11-27 | Agreed (written before the run) |
+| D-61 | **Deviation:** the PFM's input may be each clip vector minus its window's first (`minus_first`), so the place cancels out (K-36); trained as D-59; it replaces v1 in the product only if, on UCF-Crime's validation, AUC ≥ 0.70 and the rise ≥ +0.05 | 2026-11-27 | Agreed (written before training) |
 
 ---
 
@@ -1511,3 +1512,31 @@ Written before the held-out run (OMNI-906, `notebooks/pfm_heldout_gpu.ipynb`, `s
   figure for it
 - **The failure analysis:** per class, the windows' top-3, warnings, lead time and `p(event)` at the first and
   last grid point
+
+## D-61 · The scene removed from the PFM's input, and when it replaces v1 · 2026-11-27
+
+Written before training (OMNI-914, `notebooks/pfm_train_minus_first_gpu.ipynb`).
+
+**Why:** OMNI-906 measured that the joint PFM (`pfm-joint-v1-s1-e8`) answers from the place: given only its
+window's first vector it scores the same on held-out (UCF-Crime AUC 0.921 against 0.918, lead 23.2 against 23.0 s),
+and its `p(event)` does not rise as the event nears (K-35, K-36).
+
+- **Deviation from Algorithm 4's input:** with `Config.input = "minus_first"` every vector of a window is replaced by
+  itself minus the window's first vector, inside the model (`PFM.backbone_out`), so training, evaluation and serving
+  all do it the same way. What the whole window shares (the camera, the place, the light) cancels; what changes
+  stays. On UCF-Crime's vectors the differences are of the same order as the vectors (mean norm 0.28 against 1.0),
+  so nothing is rescaled. The first position is always zero, and a one-vector window says nothing but its length.
+  Checkpoints saved before this are `raw`
+- **Everything else is D-59's:** both domains, the per-domain `α`, 3 seeds × 30 epochs, the epoch on UCF-Crime's
+  validation ROC-AUC, `θ_d` by the 10% rule on validation. A new run id (`pfm-joint-v2-mf-s{seed}-e{epoch}`); v1 stays
+  on Drive
+- **The rise:** the mean `p(event)` of UCF-Crime's positive samples in the last 10 s before the event, minus that of
+  those 20-30 s before it. A forecaster's is positive; a scene recogniser's is about 0 (v1's on held-out: about -0.04)
+- **Which model the product serves (OMNI-910), on validation only:** v2 becomes the chosen run if its UCF-Crime
+  validation AUC is at least **0.70** (it must still tell an event from normal) **and** its rise is at least **+0.05**
+  (it must get more sure as the event nears). Otherwise v1 stays chosen, and v2 is reported. Held-out chooses nothing
+- **Measured on held-out** with `notebooks/pfm_heldout_gpu.ipynb` (D-60's measures, now with the rise). The
+  first-vector control is empty on a `minus_first` model by construction (the first vector minus itself), so its
+  evidence is the timeline and the rise, beside v1's
+- **Not done here:** other ways to remove the scene (differences between consecutive vectors, normalising per
+  camera); same-camera normal footage (OMNI-915)

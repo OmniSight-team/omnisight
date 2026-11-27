@@ -208,3 +208,21 @@ def test_a_domain_can_weigh_its_time_term_on_its_own_scale():
     total, _ = model_mod.loss({"ucf_crime": (logits, dt), "ccd": (logits, dt)}, {"ucf_crime": (y, tau), "ccd": (y, tau)}, config)
     assert float(total) == pytest.approx((ce + 0.005 * 400) + (ce + 1.0 * 400), rel=1e-6)  # CCD keeps alpha
     assert Config(**config.to_dict()).alpha_of("ucf_crime") == 0.005
+
+
+def test_minus_first_ignores_what_the_whole_window_shares_and_old_configs_stay_raw():
+    torch.manual_seed(0)
+    model = PFM(_config(input="minus_first")).eval()
+    x, mask = torch.randn(2, 5, 16), torch.tensor([[True] * 5, [True] * 3 + [False] * 2])
+    scene = torch.randn(2, 1, 16)  # the same vector added to every step of each window
+    with torch.no_grad():
+        a, b = model(x, mask, "ccd"), model(x + scene, mask, "ccd")
+    assert torch.allclose(a[0], b[0], atol=1e-5) and torch.allclose(a[1], b[1], atol=1e-5)
+
+    raw = PFM(_config()).eval()
+    with torch.no_grad():
+        assert not torch.allclose(raw(x, mask, "ccd")[0], raw(x + scene, mask, "ccd")[0], atol=1e-5)
+    old = {k: v for k, v in _config().to_dict().items() if k != "input"}  # a checkpoint from before D-61
+    assert Config(**old).input == "raw"
+    with pytest.raises(ValueError):
+        _config(input="minus_last")

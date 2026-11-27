@@ -135,17 +135,28 @@ def timeline(data: Data, p: np.ndarray, step: float) -> dict:
             "negative_mean": float(score[~positive].mean())}
 
 
+def rise(data: Data, p: np.ndarray, near=(0.0, 10.0), far=(20.0, 30.0)) -> float:
+    """D-61's forecasting check: the mean `1 - p(Normal)` of the positive samples `near` the event (τ in
+    [near)) minus that of those `far` from it (τ in [far)). A scene recogniser's is about 0 or below."""
+    positive, score = data.y != 0, 1.0 - p[:, 0]
+    def mean(lo, hi):
+        which = positive & (data.tau >= lo) & (data.tau < hi)
+        return float(score[which].mean()) if which.any() else float("nan")
+    return mean(*near) - mean(*far)
+
+
 def measure(data: Data, p: np.ndarray, dt: np.ndarray, theta: float, step: float) -> dict:
     """Everything for one domain and one input (the model or the control): the window rows, the summary
     (overall and per nominal length when there are several), the classes and the timeline."""
     rows = windows(data, p, theta)
-    out = {"summary": summary(data, p, dt, rows), "by_class": by_class(rows), "timeline": timeline(data, p, step),
+    out = {"summary": {**summary(data, p, dt, rows), "rise": rise(data, p)}, "by_class": by_class(rows), "timeline": timeline(data, p, step),
            "windows": rows}
     lengths = sorted({r["length_s"] for r in rows})
     if len(lengths) > 1:
         out["per_length"] = {}
         for length in lengths:
             which = np.array([w.rsplit("|", 1)[1] == length for w in data.window])
-            out["per_length"][length] = summary(data.subset(which), p[which], dt[which],
-                                                [r for r in rows if r["length_s"] == length])
+            part = data.subset(which)
+            out["per_length"][length] = {**summary(part, p[which], dt[which], [r for r in rows if r["length_s"] == length]),
+                                         "rise": rise(part, p[which])}
     return out

@@ -95,3 +95,14 @@ def test_measure_splits_ucf_by_window_length():
     assert sorted(out["per_length"]) == ["30", "60"]
     assert out["per_length"]["30"]["positive_windows"] == 1 and out["per_length"]["30"]["lead_mean_s"] == 5.0
     assert out["by_class"]["Abuse"]["top3_last"] == 1.0 and out["summary"]["roc_auc"] == 1.0
+
+
+def test_rise_is_p_event_near_the_event_minus_far_from_it():
+    samples = [{"label": "Abuse", "tau_s": str(tau), "clip_key": "a", "nominal_length_s": "30", "t_s": str(30 - tau)}
+               for tau in (2, 8, 15, 22, 28)]
+    samples.append({"label": "Normal", "tau_s": "", "clip_key": "n", "nominal_length_s": "30", "t_s": "1"})
+    data = train_mod.Data(None, samples, range(6), "ucf_crime")
+    event = np.array([0.9, 0.7, 0.5, 0.3, 0.1, 0.99])
+    p = np.zeros((6, 14))
+    p[:, 0], p[:, 1] = 1 - event, event
+    assert held.rise(data, p) == pytest.approx(0.8 - 0.2)  # the normal sample is not counted

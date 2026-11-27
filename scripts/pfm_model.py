@@ -15,6 +15,10 @@ summary token's output is `h`. **A head per domain:** one linear layer giving th
 `Δt` (softplus: a time ahead is never negative). The MSE is taken on positive samples only (a negative
 has no event, so no `τ`).
 
+**The input** (`Config.input`, D-61): `raw`, the clip vectors as they are (Algorithm 4), or `minus_first`, each
+vector minus its window's first vector, so what never changes in the window (the place) cancels out and only what
+changes is left (OMNI-914, K-36). Done inside the model, so serving it needs nothing else.
+
 Every setting is in `Config`, saved with each checkpoint.
 """
 
@@ -31,6 +35,9 @@ CLASSES = {
     "ucf_crime": ["Normal", "Abuse", "Arrest", "Arson", "Assault", "Burglary", "Explosion", "Fighting",
                   "RoadAccidents", "Robbery", "Shooting", "Shoplifting", "Stealing", "Vandalism"],
 }
+
+
+INPUTS = ("raw", "minus_first")
 
 
 @dataclass
@@ -50,6 +57,11 @@ class Config:
     weight_decay: float = 0.01
     batch: int = 256
     epochs: int = 30
+    input: str = "raw"  # or "minus_first" (D-61); a checkpoint saved before D-61 is raw
+
+    def __post_init__(self) -> None:
+        if self.input not in INPUTS:
+            raise ValueError(f"input {self.input!r}, expected one of {INPUTS}")
 
     def lam(self, domain: str) -> float:
         return self.lambdas.get(domain, 1.0)
@@ -80,6 +92,8 @@ class PFM(nn.Module):
         n, length, _ = x.shape
         if length > self.config.max_length:
             raise ValueError(f"{length} vectors, the model takes at most {self.config.max_length}")
+        if self.config.input == "minus_first":  # the window's first vector is always at position 0
+            x = (x - x[:, :1]) * mask.unsqueeze(-1)
         sizes = mask.sum(dim=1, keepdim=True)
         back = (sizes - 1 - torch.arange(length, device=x.device)).clamp(min=0)  # 0 = the newest vector
         tokens = self.project(x) + self.position(back)
