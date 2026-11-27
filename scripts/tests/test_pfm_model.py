@@ -365,3 +365,60 @@ def test_distance_weights_are_off_by_default_per_domain_and_leave_the_time_error
     w = torch.tensor([1.0, math.exp(-1.0), math.exp(-48.0)])
     ce = (w * torch.nn.functional.cross_entropy(logits, y, reduction="none")).sum() / w.sum()
     assert float(on) == pytest.approx(float(ce) + 4.0, rel=1e-6) and parts["ccd"]["mse"] == pytest.approx(4.0)
+
+
+def test_ranking_wants_an_event_window_to_rise_by_the_margin_and_a_normal_one_not_to_climb():
+    early = torch.tensor([0.2, 0.2, 0.6, 0.3, 0.3, 0.5])
+    late = torch.tensor([0.5, 0.25, 0.4, 0.3, 0.7, 0.2])
+    event = torch.tensor([True, True, True, False, False, False])
+    each = [model_mod.ranking_loss(early[i : i + 1], late[i : i + 1], event[i : i + 1], 0.1).item() for i in range(6)]
+    # rising by .3: 0; rising by .05: .05 short of the margin; falling by .2: .3;
+    # normal flat: 0; normal climbing by .4: .4; normal falling: 0
+    assert each == pytest.approx([0.0, 0.05, 0.3, 0.0, 0.4, 0.0])
+    assert model_mod.ranking_loss(early, late, event, 0.1).item() == pytest.approx(sum(each) / 6)
+
+
+def _windows_for_ranking():
+    """CCD: an event window over 2 s, a normal window over 1.5 s, and a normal window of 0.5 s (too short for 1 s)."""
+    samples = []
+    for clip, label, times in (("e", "Crash", (0.5, 1.0, 1.5, 2.0, 2.5)), ("n", "Normal", (2.0, 0.5, 1.0, 1.5)),
+                               ("s", "Normal", (0.5, 1.0))):
+        for t in times:
+            samples.append({"label": label, "tau_s": str(3.0 - t) if label == "Crash" else "", "clip_key": clip,
+                            "nominal_length_s": "", "t_s": str(t)})
+    return train_mod.Data(None, samples, range(len(samples)), "ccd")
+
+
+def test_pairs_come_from_one_window_the_later_at_least_the_gap_after_and_short_windows_are_never_drawn():
+    data = _windows_for_ranking()
+    seen = set()
+    for k in range(200):
+        early, late, event = train_mod.draw_pairs(data, np.random.default_rng(k), 64, 1.0)
+        assert len(early) == 2  # only two windows span 1 s: "s" is never drawn
+        assert (data.window[early] == data.window[late]).all()
+        assert (data.t_s[late] - data.t_s[early] >= 1.0 - 1e-9).all()
+        assert (event == (data.y[early] != 0)).all() and set(data.window[early]) == {"e|", "n|"}
+        seen.update(zip(data.t_s[early].tolist(), data.t_s[late].tolist(), data.window[early].tolist()))
+    # every pair with a gap of at least 1 s is drawn: 6 in the 5-second window, 3 in the 4-second one
+    assert len(seen) == 9
+    again = train_mod.draw_pairs(data, np.random.default_rng(7), 64, 1.0)
+    assert all((a == b).all() for a, b in zip(again, train_mod.draw_pairs(data, np.random.default_rng(7), 64, 1.0)))
+
+
+def test_ranking_is_off_by_default_and_on_it_is_added_to_each_step_and_resumes_the_same(tmp_path):
+    plain = _config()
+    assert plain.rank_gaps == {} and (plain.rank_windows, plain.rank_margin, plain.lambda_rank) == (64, 0.1, 1.0)
+    old = {k: v for k, v in plain.to_dict().items() if k not in ("rank_gaps", "rank_windows", "rank_margin", "lambda_rank")}
+    assert Config(**old).rank_gaps == {}  # a checkpoint from before D-65
+    assert model_mod.RANK_GAPS == {"ucf_crime": 5.0, "ccd": 1.0}
+
+    data = _ccd(48)
+    _, off = train_mod.train(_config(domains=["ccd"], epochs=2), {"ccd": data}, tmp_path / "off", seed=3,
+                             log=lambda m: None)
+    assert "ccd_rank" not in off[0]
+    config = _config(domains=["ccd"], epochs=3, rank_gaps={"ccd": 1.0}, rank_windows=4)
+    _, straight = train_mod.train(config, {"ccd": data}, tmp_path / "a", seed=3, log=lambda m: None)
+    assert all(h["ccd_rank"] >= 0 for h in straight) and straight[0]["loss"] != off[0]["loss"]
+    train_mod.train(config, {"ccd": data}, tmp_path / "b", seed=3, stop_after=1, log=lambda m: None)
+    _, resumed = train_mod.train(config, {"ccd": data}, tmp_path / "b", seed=3, log=lambda m: None)
+    assert [h["loss"] for h in resumed] == pytest.approx([h["loss"] for h in straight], rel=1e-5)

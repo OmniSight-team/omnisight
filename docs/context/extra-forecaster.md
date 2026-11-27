@@ -135,3 +135,45 @@ by its distance to the event; D-65 sets the weights.
 ### Result
 
 Fix 1 in the model, off by default, tested. Next: OMNI-X20, Fix 2.
+
+---
+
+## OMNI-X20 · Fix 2: ranking inside the same window
+
+### Why this ticket exists
+
+Fix 1 tells the model how much each second counts, not that the score should climb as the event nears. Early
+detection work (Ma et al., CVPR 2016) adds a ranking error inside the same sequence: a later second of an event
+window must score higher than an earlier one. On normal windows D-65 adds the opposite, no climbing for no reason,
+so a score that only grows with time is penalised in training too, not only by the flat-line check.
+
+### What was done
+
+2026-11-28.
+- `scripts/pfm_model.py`: `Config.rank_gaps` (per domain, empty = off, so older checkpoints load as before),
+  `rank_windows = 64`, `rank_margin = 0.1`, `lambda_rank = 1`; `RANK_GAPS = {"ucf_crime": 5, "ccd": 1}` (D-65);
+  `ranking_loss(early, late, event, margin)`: the mean of `max(0, margin − (late − early))` on event windows and
+  `max(0, late − early)` on normal ones, with scores `1 − p(Normal)`
+- `scripts/train_pfm.py`: `draw_pairs(data, rng, n, gap)`: `n` windows without repeats among those spanning at least
+  the gap (event and normal as they come), one pair from each drawn uniformly among its pairs at least the gap
+  apart; the windows are indexed once per split. In each step, every domain with a gap draws its pairs from the
+  epoch's `(seed, epoch)` generator, scores both seconds in one forward pass (dropout on, as the usual batch), and
+  adds `λ_d × λ_rank × ranking` to the total (`λ_d` is 1, so this is D-65's sum). The history gets `{domain}_rank`
+
+### Verification performed
+
+- Three new tests: `ranking_loss` on six hand-made pairs (a rise of 0.3 gives 0, of 0.05 gives 0.05, a fall of 0.2
+  gives 0.3; a flat normal pair 0, a climbing one 0.4, a falling one 0); `draw_pairs` over 200 draws: both seconds
+  from the same window, at least the gap apart, a window too short never drawn, every allowed pair drawn (9 of 9),
+  the same generator gives the same pairs; training: off by default and for a pre-D-65 config, on it adds a
+  non-negative `ccd_rank` and changes the loss, and a run stopped after epoch 1 and resumed gives the same losses as
+  one that never stopped. 56 PFM tests pass
+
+### Not verified
+
+- Its effect on a real model, and its cost per step on Colab: X21's versions B and C
+- The full suite (Docker was not running, so the Postgres tests could not run); the PFM tests do not need it
+
+### Result
+
+Fix 2 in training, off by default, tested. Next: OMNI-X21, training on Colab.

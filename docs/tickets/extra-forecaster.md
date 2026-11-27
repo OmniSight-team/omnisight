@@ -95,13 +95,13 @@ Every measure scores a second by `1 - p(Normal)`. Each is tested on hand-made wi
 
 ## OMNI-X20 · Fix 2: ranking inside the same window · Sat morning
 
-- [ ] Each training step, beside the usual batch, one extra batch per dataset of **64 windows** from the train split,
+- [x] Each training step, beside the usual batch, one extra batch per dataset of **64 windows** from the train split,
       **two seconds from each** (drawn at random, the later at least 5 s after the earlier on UCF-Crime, 1 s on CCD)
-- [ ] Error per pair, with score = `1 - p(Normal)`:
+- [x] Error per pair, with score = `1 - p(Normal)`:
   - event window: `max(0, 0.1 - (score_late - score_early))`: the closer second must score higher, by 0.1
   - normal window: `max(0, score_late - score_early)`: no climbing for no reason
-- [ ] The ranking error is the mean over the pairs, times `λ_rank` = 1, added to the total
-- [ ] A `Config` option, off by default. Tested on hand-made windows (a rising pair gives 0, a falling pair a positive
+- [x] The ranking error is the mean over the pairs, times `λ_rank` = 1, added to the total
+- [x] A `Config` option, off by default. Tested on hand-made windows (a rising pair gives 0, a falling pair a positive
       error; a climbing normal pair a positive error, a flat one 0)
 
 ## OMNI-X21 · Training on Colab: three versions · Sat midday → Sun

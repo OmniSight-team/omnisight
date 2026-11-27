@@ -2,7 +2,8 @@
 and measure it on a split.
 
 **Training.** Each step draws one batch per domain and sums the domains' losses with `λ_d`
-(Appendix B.4). The order of an epoch and its dropout come from `(seed, epoch)`, so a run stopped
+(Appendix B.4); with `Config.rank_gaps` (Fix 2, D-65) each domain also adds a ranking batch of pairs
+drawn by `draw_pairs`. The order of an epoch, its pairs and its dropout come from `(seed, epoch)`, so a run stopped
 after an epoch and resumed from its checkpoint makes the same epochs as one that never stopped.
 `{out}/last.pt` (model, optimiser, epoch, history, config, seed) is written atomically after every
 epoch; a run with a checkpoint resumes from it, and refuses one made with another config or seed;
@@ -36,7 +37,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pfm_model import CLASSES, PFM, Config, class_names, loss
+from pfm_model import CLASSES, PFM, Config, class_names, loss, ranking_loss
 from pfm_samples import Store
 
 FALSE_ALARM = 0.10
@@ -83,6 +84,36 @@ class Data:
         x, mask = self.store.batch(self.rows[which], max_length)
         return (torch.from_numpy(x).to(device), torch.from_numpy(mask).to(device),
                 torch.from_numpy(self.y[which]).to(device), torch.from_numpy(self.tau[which]).to(device))
+
+
+def draw_pairs(data: Data, rng: np.random.Generator, n: int, gap: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Fix 2's batch (D-65): `n` windows drawn at random (without repeats) from those spanning at least `gap`
+    seconds, event and normal as they come, and from each one pair of its seconds drawn uniformly among the pairs
+    whose later is at least `gap` after the earlier. Returns the rows of the earlier and later seconds and whether
+    each window is an event window."""
+    windows = getattr(data, "_rank_windows", None)
+    if windows is None or windows[0] != gap:
+        kept = []
+        for w in dict.fromkeys(data.window):
+            rows = np.flatnonzero(data.window == w)
+            rows = rows[np.argsort(data.t_s[rows], kind="stable")]
+            t = data.t_s[rows]
+            later = len(t) - np.searchsorted(t, t + gap - 1e-9, side="left")  # per second: how many are >= gap later
+            if later.sum():
+                kept.append((rows, later, bool(data.y[rows[0]] != 0)))
+        data._rank_windows = windows = (gap, kept)
+    kept = windows[1]
+    if not kept:
+        raise ValueError(f"no {data.domain} window spans {gap} s")
+    chosen = rng.choice(len(kept), size=min(n, len(kept)), replace=False)
+    early, late, event = [], [], []
+    for k in chosen:
+        rows, later, is_event = kept[k]
+        pick = rng.integers(later.sum())
+        i = int(np.searchsorted(np.cumsum(later), pick, side="right"))
+        j = len(rows) - later[i] + (pick - (np.cumsum(later)[i] - later[i]))
+        early.append(rows[i]), late.append(rows[j]), event.append(is_event)
+    return np.array(early), np.array(late), np.array(event)
 
 
 def _save(path: Path, state: dict) -> None:
@@ -138,6 +169,16 @@ def train(config: Config, data: dict[str, Data], out: Path, seed: int, *, device
                 x, mask, y, tau = part.tensors(orders[d][b * config.batch : (b + 1) * config.batch], config.max_length, device)
                 outputs[d], targets[d] = model(x, mask, d), (y, tau)
             total, parts = loss(outputs, targets, config)
+            for d, part in data.items():  # Fix 2 (D-65): one ranking batch per domain that has a gap
+                if d not in config.rank_gaps:
+                    continue
+                early, late, event = draw_pairs(part, rng, config.rank_windows, config.rank_gaps[d])
+                x, mask, _, _ = part.tensors(np.r_[early, late], config.max_length, device)
+                score = 1.0 - torch.softmax(model(x, mask, d)[0].float(), dim=-1)[:, 0]
+                rank = ranking_loss(score[: len(early)], score[len(early) :], torch.from_numpy(event).to(device),
+                                    config.rank_margin)
+                total = total + config.lam(d) * config.lambda_rank * rank
+                parts[d]["rank"] = float(rank.detach())
             optimiser.zero_grad()
             total.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)

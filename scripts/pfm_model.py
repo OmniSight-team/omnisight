@@ -28,6 +28,12 @@ error is `Σ w · CE / Σ w`, so a second long before the event, where nothing i
 (DSA / DSTA's exponential weighting). D-65's settings are `DISTANCE_WEIGHTS`. Empty (the default, and every
 checkpoint saved before it) is the plain mean. The time error is unchanged.
 
+**Ranking inside the same window** (`Config.rank_gaps`, Fix 2 of D-65, OMNI-X20): with a domain's gap set, each step
+also scores two seconds of each of `rank_windows` train windows, the later at least the gap after the earlier
+(`train_pfm.draw_pairs`), and adds `λ_rank` × the mean of `ranking_loss`: on an event window the later must score
+higher by `rank_margin`, on a normal window it must not score higher at all (Ma et al., CVPR 2016). The score is
+`1 - p(Normal)`. D-65's gaps are `RANK_GAPS`. Empty (the default, and every older checkpoint) is off.
+
 Every setting is in `Config`, saved with each checkpoint.
 """
 
@@ -48,6 +54,7 @@ CLASSES = {
 
 INPUTS = ("raw", "minus_first")
 DISTANCE_WEIGHTS = {"ucf_crime": [8.0, 10.0], "ccd": [0.0, 1.0]}  # D-65: (τ0, s) in seconds; CCD is DSTA's
+RANK_GAPS = {"ucf_crime": 5.0, "ccd": 1.0}  # D-65: the later second at least this many seconds after the earlier
 LABELS = ("classes", "event")
 
 
@@ -77,6 +84,10 @@ class Config:
     input: str = "raw"  # or "minus_first" (D-61); a checkpoint saved before D-61 is raw
     labels: str = "classes"  # or "event" (D-62); a checkpoint saved before D-62 is classes
     distance_weights: dict[str, list[float]] = field(default_factory=dict)  # per domain (τ0, s), D-65; missing = off
+    rank_gaps: dict[str, float] = field(default_factory=dict)  # per domain, Fix 2 (D-65); missing = no ranking
+    rank_windows: int = 64  # windows per domain in the ranking batch
+    rank_margin: float = 0.1
+    lambda_rank: float = 1.0
 
     def __post_init__(self) -> None:
         if self.input not in INPUTS:
@@ -156,6 +167,13 @@ def domain_loss(logits: torch.Tensor, dt: torch.Tensor, y: torch.Tensor, tau: to
     positive = ~torch.isnan(tau)
     mse = F.mse_loss(dt[positive], tau[positive]) if positive.any() else dt.sum() * 0.0
     return ce + alpha * mse, {"ce": float(ce.detach()), "mse": float(mse.detach())}
+
+
+def ranking_loss(early: torch.Tensor, late: torch.Tensor, event: torch.Tensor, margin: float) -> torch.Tensor:
+    """Fix 2 (D-65): the mean over pairs of `max(0, margin - (late - early))` on an event window and
+    `max(0, late - early)` on a normal one; `early`, `late` are `1 - p(Normal)` of the two seconds."""
+    rise = late - early
+    return torch.where(event, F.relu(margin - rise), F.relu(rise)).mean()
 
 
 def loss(outputs: dict[str, tuple], targets: dict[str, tuple], config: Config) -> tuple[torch.Tensor, dict]:
