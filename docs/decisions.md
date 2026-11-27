@@ -67,7 +67,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-61 | **Deviation:** the PFM's input may be each clip vector minus its window's first (`minus_first`), so the place cancels out (K-36); trained as D-59; it replaces v1 in the product only if, on UCF-Crime's validation, AUC ≥ 0.70 and the rise ≥ +0.05 | 2026-11-27 | Agreed (written before training) |
 | D-62 | **Deviation:** the PFM may answer only "an event is coming" or Normal (`Config.labels = "event"`: UCF-Crime's 13 event classes merged; CCD unchanged), trained as v2; it replaces v2 only if, on UCF-Crime's validation, its AUC beats v2's by more than the larger seed spread and its rise is not below v2's | 2026-11-27 | Agreed (written before training) |
 | D-63 | **Revision:** SM-2 becomes "an event is coming": held-out UCF-Crime ROC-AUC ≥ 0.70, with false alarms per hour and lead time reported beside it; Phase A's "the true event in the top 3" is still reported for models with classes | 2026-11-27 | Agreed (written before the measurement) |
-| D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the served model chosen between v2 and the event-only model on it, with a flat-line check on normal windows; the pooled AUC still reported | 2026-11-27 | Agreed (written before any of these numbers was computed) |
+| D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the pooled AUC still reported. **Amended before training:** only the event-only model is trained again, each seed's epoch chosen by UCF-Crime's validation within-window AUC; the served model is its best seed by that measure if its flat-line check is ≤ 0.60; v2 is measured for reference only | 2026-11-27 | Agreed (written before any of these numbers was computed; amended before training) |
 
 ---
 
@@ -1640,3 +1640,21 @@ Otherwise v2 stays. All three seeds of both, both domains, all five measures rep
 - **Held-out once, only for the served model** (`notebooks/pfm_heldout_gpu.ipynb`), all five measures; replaces
   D-62's held-out step
 - **Not changed:** SM-3 (CCD's lead time, D-23); the 10% rule for `θ_d`
+
+**Amended before training (2026-11-27, OMNI-917 changed by Ahmad):** the epochs of both models were chosen by the
+pooled AUC, so judging their checkpoints by the within-window AUC would judge them at epochs the wrong measure
+picked. And the product asks "is something coming, and when", the event-only model's own question. So:
+
+- **Only the event-only model is trained again,** every setting as OMNI-916 (D-62: `minus_first`,
+  `labels="event"`, both domains, the same samples, splits and `α`, 3 seeds, up to 120 epochs, patience 30). What
+  changes: after every epoch `train_pfm.validation` measures both domains' validation, and **UCF-Crime's
+  within-window AUC picks `best.pt`** and drives the patience (the first epoch on a tie). Every epoch's five
+  measures go into the history. New folder `models/pfm/joint-event-ww/`, run id `pfm-joint-v4-ev-ww-s{seed}-e{epoch}`;
+  the old runs stay on Drive and choose nothing
+- **The served model** is the seed with the highest UCF-Crime validation within-window AUC (the lowest seed on a
+  tie), at its `best.pt`, `θ_d` by the 10% rule on validation, **if its flat-line check on UCF-Crime's validation
+  normal windows is ≤ 0.60**. If it fails, no new model is served: v2 stays served (as OMNI-910 uses today) and the
+  failure is recorded; held-out is not run on a model that fails
+- **v2 is no longer a candidate.** Its old checkpoint (`pfm-joint-v2-mf-s2-e55`) is measured once on the same
+  validation, all five measures, for reference only. The margin over v2 (above) is dropped
+- **Held-out once, only for the served model,** all five measures and false alarms per hour; SM-2 as above

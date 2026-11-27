@@ -271,3 +271,48 @@ def test_event_labels_merge_ucf_crime_into_one_event_class_and_old_configs_keep_
     assert data.for_labels("classes").y.tolist() == [0, 1, 13] and events.subset([2]).names == ["Normal", "Event"]
     ccd = _ccd(8)
     assert ccd.for_labels("event").y.tolist() == ccd.y.tolist() and ccd.for_labels("event").names == ["Normal", "Crash"]
+
+
+def _ucf_validation():
+    """One Abuse window (τ 25, 22, 8, 2) and one normal window of 4 samples."""
+    samples = [{"label": "Abuse", "tau_s": str(tau), "clip_key": "a", "nominal_length_s": "30", "t_s": str(t)}
+               for t, tau in ((5, 25), (8, 22), (22, 8), (28, 2))]
+    samples += [{"label": "Normal", "tau_s": "", "clip_key": "n", "nominal_length_s": "30", "t_s": str(t)}
+                for t in (0, 5, 25, 29)]
+    return train_mod.Data(None, samples, range(8), "ucf_crime").for_labels("event")
+
+
+def _p(scores):
+    s = np.array(scores, float)
+    return np.c_[1 - s, s]
+
+
+def test_best_pt_is_chosen_by_the_within_window_auc_and_every_epoch_keeps_the_five_measures(tmp_path, monkeypatch):
+    val = {"ucf_crime": _ucf_validation()}
+    # epoch 1: every event sample above every normal one (pooled AUC 1.0) but falling as the event nears (within 0);
+    # epoch 2: close above far inside the window (within 3.5 / 4) though the pooled AUC is low (0.25)
+    epochs = iter([_p([0.9, 0.9, 0.6, 0.6] + [0.1] * 4), _p([0.2, 0.3, 0.5, 0.3] + [0.4] * 4)])
+    monkeypatch.setattr(train_mod, "predict", lambda model, data, device="cpu": (next(epochs), np.zeros(len(data))))
+
+    config = _config(domains=["ccd"], epochs=2)
+    _, history = train_mod.train(config, {"ccd": _ccd(16)}, tmp_path, seed=0, log=lambda m: None,
+                                 validate=lambda model: train_mod.validation(model, val))
+
+    first, second = (h["validation"] for h in history)
+    assert first["ucf_crime"]["pooled_auc"] == 1.0 and first["score"] == 0.0
+    assert second["ucf_crime"]["pooled_auc"] == pytest.approx(0.25) and second["score"] == pytest.approx(0.875)
+    assert second["chosen_by"] == "ucf_crime within_window_auc"
+    for key in ("within_window_auc", "flat_line", "per_window_auc", "ap", "mtta_s", "pooled_auc", "detection_rate",
+                "theta"):
+        assert key in first["ucf_crime"] and key in second["ucf_crime"], key
+    assert train_mod.load(tmp_path / "best.pt")[1]["epoch"] == 2
+
+
+def test_a_split_without_a_window_that_has_both_parts_scores_minus_infinity(monkeypatch):
+    samples = [{"label": "Abuse", "tau_s": str(tau), "clip_key": "a", "nominal_length_s": "30", "t_s": str(t)}
+               for t, tau in ((0, 15), (10, 5))]
+    samples += [{"label": "Normal", "tau_s": "", "clip_key": "n", "nominal_length_s": "30", "t_s": "0"}]
+    data = train_mod.Data(None, samples, range(3), "ucf_crime").for_labels("event")
+    monkeypatch.setattr(train_mod, "predict", lambda model, d, device="cpu": (_p([0.5, 0.6, 0.1]), np.zeros(3)))
+    assert train_mod.validation(None, {"ucf_crime": data})["score"] == -math.inf
+
