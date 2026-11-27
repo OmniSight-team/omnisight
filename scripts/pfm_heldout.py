@@ -15,6 +15,8 @@ analysis and the scene control (rules in D-60, written before the run).
   30 s and 60 s windows of a video overlap, so some footage counts twice, in both the alarms and the hours
 - **The timeline** (`timeline`): the mean `1 - p(Normal)` of the positive samples per bin of time to the
   event, beside that of the negative samples: a forecaster's rises as the event nears
+- **The forecasting measures** (`pfm_measures.py`, D-64): within-window AUC (SM-2), the flat-line check,
+  per-window AUC, AP and mTTA, in every summary
 
 Run from `notebooks/pfm_heldout_gpu.ipynb` on Colab. Locally: `uv run pytest scripts/tests/test_pfm_heldout.py`.
 """
@@ -25,6 +27,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pfm_measures
 from train_pfm import Data, _roc_auc
 
 
@@ -165,7 +168,8 @@ def measure(data: Data, p: np.ndarray, dt: np.ndarray, theta: float, step: float
     """Everything for one domain and one input (the model or the control): the window rows, the summary
     (overall and per nominal length when there are several), the classes and the timeline."""
     rows = windows(data, p, theta)
-    out = {"summary": {**summary(data, p, dt, rows), "rise": rise(data, p), **false_alarms_per_hour(data, p, theta)},
+    out = {"summary": {**summary(data, p, dt, rows), "rise": rise(data, p), **false_alarms_per_hour(data, p, theta),
+                       **pfm_measures.measures(data, p)},
            "by_class": by_class(rows), "timeline": timeline(data, p, step),
            "windows": rows}
     lengths = sorted({r["length_s"] for r in rows})
@@ -175,5 +179,6 @@ def measure(data: Data, p: np.ndarray, dt: np.ndarray, theta: float, step: float
             which = np.array([w.rsplit("|", 1)[1] == length for w in data.window])
             part = data.subset(which)
             out["per_length"][length] = {**summary(part, p[which], dt[which], [r for r in rows if r["length_s"] == length]),
-                                         "rise": rise(part, p[which]), **false_alarms_per_hour(part, p[which], theta)}
+                                         "rise": rise(part, p[which]), **false_alarms_per_hour(part, p[which], theta),
+                                         **pfm_measures.measures(part, p[which])}
     return out

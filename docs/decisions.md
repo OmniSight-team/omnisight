@@ -67,6 +67,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-61 | **Deviation:** the PFM's input may be each clip vector minus its window's first (`minus_first`), so the place cancels out (K-36); trained as D-59; it replaces v1 in the product only if, on UCF-Crime's validation, AUC ≥ 0.70 and the rise ≥ +0.05 | 2026-11-27 | Agreed (written before training) |
 | D-62 | **Deviation:** the PFM may answer only "an event is coming" or Normal (`Config.labels = "event"`: UCF-Crime's 13 event classes merged; CCD unchanged), trained as v2; it replaces v2 only if, on UCF-Crime's validation, its AUC beats v2's by more than the larger seed spread and its rise is not below v2's | 2026-11-27 | Agreed (written before training) |
 | D-63 | **Revision:** SM-2 becomes "an event is coming": held-out UCF-Crime ROC-AUC ≥ 0.70, with false alarms per hour and lead time reported beside it; Phase A's "the true event in the top 3" is still reported for models with classes | 2026-11-27 | Agreed (written before the measurement) |
+| D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the served model chosen between v2 and the event-only model on it, with a flat-line check on normal windows; the pooled AUC still reported | 2026-11-27 | Agreed (written before any of these numbers was computed) |
 
 ---
 
@@ -1594,3 +1595,48 @@ so the old wording would pass by construction. Measured: v1 46.8% (from the plac
   30 s and 60 s windows of a video overlap, so some footage counts twice) and the lead time at the first warning
 - **Phase A's top-3** is still reported for models with classes (v1, v2), as history; not for a merged model
 - **Not changed:** SM-3 (CCD's lead time, D-23)
+
+## D-64 · Measures that fit forecasting, SM-2 on them, and which model is served · 2026-11-27
+
+Written before any of these numbers was computed (OMNI-917, `scripts/pfm_measures.py`,
+`notebooks/pfm_measures_gpu.ipynb`). Measuring only: no training, the checkpoints already on Drive.
+
+**Why:** the AUC so far pools every sample of every window. A sample 30 s before the event counts as "event" though
+nothing is visible yet, and samples of different videos are compared, so a model can score by telling places apart
+(K-36). OMNI-916 shows it: the event-only model ties v2 on that AUC (0.7315 against 0.7293) but rises twice as much
+(+0.170 against +0.076). **Said openly:** the rise was seen before this rule was written, and the within-window AUC
+asks nearly the same question, so it is likely to favour the event-only model. The flat-line check is the guard: a
+score that only climbs with time, whatever the footage, passes the first measure but fails the check.
+
+**The measures** (all on `1 − p(Normal)`, the same for a model with classes and a merged one; tested on hand-made
+windows):
+
+1. **Within-window AUC (the main one).** Inside each event window, every `close` sample against every `far` sample
+   of the same window: the share where `close` scores higher, ties half. Mean over the windows that have both; the
+   number skipped is reported
+   - UCF-Crime: `close` τ in [0, 10) s, `far` τ in [20, 30) s, D-61's rise ranges (the ticket said `far` τ ≥ 20 s;
+     narrowed so a 60 s window's `far` is the same as a 30 s window's). Windows whose lead-up is under 20 s are
+     skipped
+   - CCD (about 3.5 s of lead-up, a 0.5 s grid): `close` τ in [0, 1) s, `far` τ in [2.5, 5) s
+2. **Flat-line check on normal windows.** The same, inside each normal window, with `τ' = t_last − t` (time before
+   the window's last sample) in place of `τ` and the same ranges. About 0.5 is right; well above means the score
+   climbs with time anyway
+3. **Per-window AUC.** Each window's highest score; event windows against normal windows
+4. **AP and mTTA** (accident anticipation's measures). Every distinct window score is a warning line; at each, an
+   event window is a hit if any of its samples reaches it (its TTA the `τ` of the first that does), a normal
+   window a false alarm if any does. AP: the step area under precision-recall; mTTA: the mean TTA of the hits,
+   averaged over the lines with at least one hit. Beside them the **detection rate** at the run's `θ_d` (the 10%
+   rule, unchanged)
+5. **The pooled AUC**, unchanged
+
+**Which model the product serves** (UCF-Crime validation): the two served candidates are `pfm-joint-v2-mf-s2-e55`
+and `pfm-joint-v3-ev-s0-e118` (each its own best seed already; no seed is re-picked, `θ_d` unchanged). The
+event-only model replaces v2 only if its within-window AUC beats v2's by **more than the larger seed spread** of
+that measure (best minus worst of each model's three `best.pt`) **and** its flat-line check is **≤ 0.60**.
+Otherwise v2 stays. All three seeds of both, both domains, all five measures reported in one table.
+
+- **SM-2 revised again:** held-out UCF-Crime **within-window AUC ≥ 0.70** for the served model, in place of D-63's
+  pooled AUC; the pooled AUC, false alarms per hour and lead time are reported beside it
+- **Held-out once, only for the served model** (`notebooks/pfm_heldout_gpu.ipynb`), all five measures; replaces
+  D-62's held-out step
+- **Not changed:** SM-3 (CCD's lead time, D-23); the 10% rule for `θ_d`
