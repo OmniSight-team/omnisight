@@ -130,6 +130,13 @@ def test_resume_proof_a_stopped_run_continues_with_the_same_loss_curve(tmp_path)
     with pytest.raises(RuntimeError, match="was made with"):
         train_mod.train(config, {"ccd": data}, tmp_path / "b", seed=4, log=lambda m: None)
 
+    # A finished 2-epoch run extended to 4 makes the same epochs as the straight 4; other changes are refused.
+    train_mod.train(_config(domains=["ccd"], epochs=2), {"ccd": data}, tmp_path / "c", seed=3, log=lambda m: None)
+    _, extended = train_mod.train(config, {"ccd": data}, tmp_path / "c", seed=3, log=lambda m: None)
+    assert [h["loss"] for h in extended] == pytest.approx([h["loss"] for h in straight], rel=1e-5)
+    with pytest.raises(RuntimeError, match="was made with"):
+        train_mod.train(_config(domains=["ccd"], epochs=4, lr=1e-3), {"ccd": data}, tmp_path / "c", seed=3, log=lambda m: None)
+
 
 def test_the_threshold_allows_10_percent_of_normal_windows_and_lead_time_is_the_first_warning():
     # 10 normal windows (1 sample each) and 2 crash windows of 3 samples.

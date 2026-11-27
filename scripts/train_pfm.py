@@ -5,7 +5,8 @@ and measure it on a split.
 (Appendix B.4). The order of an epoch and its dropout come from `(seed, epoch)`, so a run stopped
 after an epoch and resumed from its checkpoint makes the same epochs as one that never stopped.
 `{out}/last.pt` (model, optimiser, epoch, history, config, seed) is written atomically after every
-epoch; a run with a checkpoint resumes from it, and refuses one made with another config or seed.
+epoch; a run with a checkpoint resumes from it, and refuses one made with another config or seed;
+only `epochs` may grow, so a finished run can be extended and makes the same epochs as a longer one.
 
 **Choosing the epoch** (OMNI-905, D-59): with `validate`, each epoch ends with a validation measure
 whose `score` decides; the best epoch so far is kept in `{out}/best.pt` (the first one on a tie), and
@@ -77,6 +78,11 @@ def _save(path: Path, state: dict) -> None:
     os.replace(tmp, path)
 
 
+def _but_epochs(config: dict) -> dict:
+    """A config without its number of epochs: a finished run may be extended (OMNI-914), nothing else may change."""
+    return {k: v for k, v in config.items() if k != "epochs"}
+
+
 def train(config: Config, data: dict[str, Data], out: Path, seed: int, *, device="cpu", stop_after: int | None = None,
           validate=None, log=print) -> tuple[PFM, list[dict]]:
     """Train to `config.epochs` (or stop after epoch `stop_after`), resuming from `{out}/last.pt`.
@@ -90,7 +96,7 @@ def train(config: Config, data: dict[str, Data], out: Path, seed: int, *, device
     start, history, best = 0, [], {"epoch": 0, "score": -math.inf}
     if checkpoint.is_file():
         state = torch.load(checkpoint, map_location=device, weights_only=False)
-        if state["config"] != config.to_dict() or state["seed"] != seed:
+        if _but_epochs(Config(**state["config"]).to_dict()) != _but_epochs(config.to_dict()) or state["seed"] != seed:
             raise RuntimeError(f"{checkpoint} was made with {state['config']}, seed {state['seed']}")
         model.load_state_dict(state["model"])
         optimiser.load_state_dict(state["optimiser"])

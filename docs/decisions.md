@@ -1540,3 +1540,8 @@ and its `p(event)` does not rise as the event nears (K-35, K-36).
   evidence is the timeline and the rise, beside v1's
 - **Not done here:** other ways to remove the scene (differences between consecutive vectors, normalising per
   camera); same-camera normal footage (OMNI-915)
+- **Amended during the run, 2026-11-27: 50 epochs, not 30.** Seed 0's validation AUC was still rising at epoch 30
+  (0.6196 at epoch 1, 0.6998 at 22, 0.7105 at 30, its best). `train()` now lets a finished run grow its `epochs` (nothing
+  else may change), so the 30-epoch checkpoints continue to 50 and make the same epochs as a straight 50. Seen on
+  validation only, as D-59 allows. **Said plainly:** 0.71 is just above the rule's 0.70, which was set before; the
+  rule's thresholds stay as written, and the 30-epoch run's numbers are reported beside the 50's
