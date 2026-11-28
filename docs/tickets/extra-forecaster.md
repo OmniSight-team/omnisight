@@ -154,3 +154,50 @@ epochs, patience 30; 3 seeds (0, 1, 2); `θ_d` by the 10% rule on validation nor
 | While Colab trains | OMNI-910 · serving the model (`week-09-10.md`) |
 | Evening | X22 for A and B: the choice, held-out once, the record |
 | Sunday | C's comparison when it ends |
+
+---
+
+## OMNI-X23 · Held-out UCF-Crime measured like training: event windows shifted 8 s earlier · Sat 28 – Sun 29 Nov
+
+**Why:** SM-2 failed on held-out (within-window AUC 0.5736 against 0.70; validation 0.8172), and the windows explain
+much of it. UCF-Crime's **train and validation** windows end **8 s before the event** (D-49): a 30 s window is
+`[event − 38, event − 8)`, so "close to the event" (τ 8-13 s) is always **the last 5 s of the window**. **Held-out's**
+windows end **at the event** (`[event − 30, event)`), so the same seconds sit 17-22 s after the window's start. The
+model reads each second against the window's first vector (`minus_first`, D-61) and from the window's start (D-55),
+so it saw those seconds at a different place in the window than it was trained and chosen on. On held-out the 60 s
+normal windows climb (flat-line 0.70) and the 30 s event windows fall (0.44).
+
+Trimming the last 8 s would change nothing: each second's score depends only on the window's start up to that
+second, so the `close` and `far` seconds, and SM-2, would be the same. **The windows' start has to move.**
+
+**The fix:** held-out UCF-Crime's event windows placed as training's are: **30 s: `[event − 38, event − 8)`, 60 s:
+`[event − 68, event − 8)`**, by D-49's rule (a window with too little footage starts at 0 and is flagged
+`shortened`; an event less than 8 s into its video gets no window). The grid stays anchored at each window's last
+frame, every 1 s, so every new grid point is on the video's existing grid. The 30 s windows fall inside the
+existing 60 s windows' footage, so their vectors exist. The 60 s windows need up to **8 s of vectors before the
+existing 60 s window**, encoded on Colab into a **new folder** (`embeddings/pfm/ucf_crime/internvideo2_shift8/`,
+only the missing grid points, same encoder, pins and clip as OMNI-902). Normal windows and CCD unchanged.
+
+**Said openly:** this is a second look at held-out, after seeing its result. So everything that chooses is fixed
+before it, and nothing is chosen on it.
+
+- [x] **Decision first** (a new D-number), before any number is computed:
+  - Held-out UCF-Crime event windows shifted 8 s earlier as above; normal windows unchanged; CCD unchanged
+  - **The served model stays `pfm-v5a-s1-e14`**, chosen by D-65's rule on validation; `θ_d` stays validation's
+  - **Beside it, for reference only:** version B's best seed by D-65's rule on validation, clearly marked "not
+    chosen by the rule". Nothing changes the served model whatever the two show
+  - **SM-2:** within-window AUC ≥ 0.70 on the shifted held-out UCF-Crime, the same ranges as D-65 (`close` τ
+    [8, 13) s, `far` τ [20, 30) s). The unshifted 0.5736 stays recorded beside it, not replaced
+  - SM-3 (CCD) is not touched
+- [x] **Code:** the shifted windows and their samples built from the committed held-out windows and committed
+      (`datasets/windows/ucf_crime_heldout_shift8.csv`, `datasets/samples/ucf_crime_heldout_shift8.csv`); the
+      missing grid points per video; the encoder able to encode only those; the vector store able to read the two
+      folders together. Tested on hand-made windows: the shifted window's place and flags, the event with no window,
+      the grid points kept on the existing grid, the missing points, the sequences read across both folders
+- [ ] **Encode** (Colab): the missing grid points only, into the new folder; every video done, none failed
+- [ ] **Run** (Colab, the new folder plus the existing one): the served model and B's reference, held-out UCF-Crime,
+      shifted. All eight measures, overall and per window length (30 s / 60 s), and how many windows each range
+      keeps and skips
+- [ ] **Record the same day:** `results.md` (SM-2's row: shifted and unshifted side by side, and this ticket's
+      section), `decisions.md` (the D-number's result). If SM-2 still fails, the reason in one short paragraph; the
+      target is not lowered

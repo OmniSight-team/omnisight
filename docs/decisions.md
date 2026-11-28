@@ -69,6 +69,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-63 | **Revision:** SM-2 becomes "an event is coming": held-out UCF-Crime ROC-AUC ≥ 0.70, with false alarms per hour and lead time reported beside it; Phase A's "the true event in the top 3" is still reported for models with classes | 2026-11-27 | Agreed (written before the measurement) |
 | D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the pooled AUC still reported. **Amended before training:** only the event-only model is trained again, each seed's epoch chosen by UCF-Crime's validation within-window AUC; the served model is its best seed by that measure if its flat-line check is ≤ 0.60; v2 is measured for reference only | 2026-11-27 | Agreed (written before any of these numbers was computed; amended before training) |
 | D-65 | **Deviation** (Algorithm 4) and **revision** (SM-2's range): the forecaster trained to forecast: Fix 1 distance-weighted class error, Fix 2 ranking inside the window, versions A, B, C; eight measures; the epoch by UCF-Crime's within-window AUC among epochs passing the flat-line check (≤ 0.60); SM-2 `close` τ [8, 13) s | 2026-11-28 | Agreed (written before training); SM-3 pass, SM-2 fail (OMNI-X22) |
+| D-66 | **Revision** (how SM-2 is measured): held-out UCF-Crime's event windows shifted 8 s earlier, as training's (D-49's rule); A stays served, B for reference only; the unshifted 0.5736 kept beside | 2026-11-28 | Agreed (written before the run) |
 
 ---
 
@@ -1773,3 +1774,35 @@ follow-up. Held-out: **SM-3 passes** (2.74 s, 242 of 243 warned); **SM-2 fails**
 windows 0.44, 60 s 0.70 with a flat-line of 0.70). Nothing above is changed by the result, and SM-2's target is not
 revised. Phase A's Algorithm 4 is rewritten with these numbers after the sprint. The served run's warning rule is
 `1 − p(Normal) ≥ θ_d`, not D-59's `max(p) ≥ θ_d` (K-37).
+
+## D-66 · Held-out UCF-Crime measured like training: event windows shifted 8 s earlier · 2026-11-28
+
+**Revision** of how SM-2 is measured (D-65's ranges unchanged). Written before any number of OMNI-X23 exists;
+**nothing here changes once one does.** It is a second look at held-out, after D-65's result (SM-2 0.5736 against
+0.70), and is recorded as such: nothing is chosen on it.
+
+**Why:** UCF-Crime's train and validation windows end 8 s before the event (D-49), so the `close` seconds (τ 8-13 s)
+are always the last 5 s of the window. Held-out's windows end at the event (official times), so those seconds sit
+17-22 s after a 30 s window's start (47-52 s in a 60 s one). The model reads each second from the window's start
+(D-55) against its first vector (`minus_first`, D-61), so on held-out it meets those seconds at another place in the
+window than it was trained and chosen on. Trimming the last 8 s would not help: a second's score depends only on the
+window's start up to that second, so SM-2 would be the same number.
+
+**The rule:**
+- **Held-out UCF-Crime's event windows are rebuilt by D-49's rule,** as if their times were UCA's: 30 s:
+  `[event − 38, event − 8)`, 60 s: `[event − 68, event − 8)`. Too little footage: the window starts at 0, flagged
+  `shortened`; an event 8 s or less into its video: no window (it is counted). The event is at the window's end
+  + 8 s; the windows are flagged `shift_8s`. Normal windows unchanged; CCD unchanged
+- **The grid:** a point every 1 s back from each window's last frame, as OMNI-902 (D-54); an end 8 s earlier is
+  240 frames earlier at 30 fps, so every point is on the video's existing grid. The vectors that do not exist yet
+  (the 60 s windows' up to 8 s before the old 60 s window) are encoded on Colab with OMNI-902's encoder, pins and
+  clip into `embeddings/pfm/ucf_crime/internvideo2_shift8/`, only those points; the existing folder is not touched
+- **The served model stays `pfm-v5a-s1-e14`** (D-65), with validation's `θ_d`. Nothing is refit
+- **For reference only:** B's best seed by D-65's rule on validation (`pfm-v5b-s1-e14`, UCF-Crime within-window AUC
+  0.7560), registered but not chosen, and reported as "not chosen by the rule". Whatever A and B show, the served
+  model does not change
+- **SM-2 (D-65's target and ranges):** within-window AUC ≥ 0.70 on the shifted held-out UCF-Crime, `close` τ
+  [8, 13) s, `far` τ [20, 30) s. The unshifted 0.5736 stays recorded beside it. Also reported: the other seven
+  measures, per length (30 s / 60 s), the windows each range keeps and skips, and, for reading only, the unshifted
+  within-window AUC on the same videos (so a change from the shift is not mistaken for one from the fewer videos)
+- **SM-3 is not touched**

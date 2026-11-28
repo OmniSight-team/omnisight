@@ -154,10 +154,12 @@ def out_file(out: Path, key: str) -> Path:
 
 def run(
     windows: dict[str, list[dict]], data_dir: Path, out: Path, encoder, window, pins: dict, step_s: float,
-    *, context_s: float | None = None, session: str = "", log=print,
+    *, context_s: float | None = None, session: str = "", log=print, only: dict[str, list[int]] | None = None,
 ) -> dict:
     """Every video of `windows` without a file in `out` yet, in order. `data_dir` holds the
-    dataset's `video_relpath`s; `pins` name the encoder. One folder holds one encoder and grid."""
+    dataset's `video_relpath`s; `pins` name the encoder. One folder holds one encoder and grid.
+    `only` (D-66): per video, the grid frames to encode instead of its windows' whole grid (the points
+    another folder of the same grid lacks)."""
     out.mkdir(parents=True, exist_ok=True)
     grid = {"step_s": step_s, "context_s": context_s, "clip_span_s": CLIP_SPAN_S}
     manifest = read_manifest(out) or {"pins": pins, "grid": grid, "failed": {}, "sessions": []}
@@ -212,7 +214,7 @@ def run(
         rows = windows[key]
         try:
             fps_expected = float(rows[0]["fps"])
-            frames = grid_frames(rows, fps_expected, step_s, context_s)
+            frames = grid_frames(rows, fps_expected, step_s, context_s) if only is None else sorted(only[key])
             return key, frames, *read_clips(data_dir / rows[0]["video_relpath"], frames, window, fps_expected), None
         except Exception as exc:  # noqa: BLE001
             return key, None, None, None, None, exc

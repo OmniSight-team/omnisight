@@ -10,6 +10,8 @@ the served run. Nothing is trained or refit: every number comes from the histori
     uv run python scripts/pfm_choose.py              # print the choice, the comparisons and the table
     uv run python scripts/pfm_choose.py --register   # also: best.pt -> models/pfm/runs/{run_id}/model.pt, its
                                                      # run.json, and model_runs.json names it chosen
+    uv run python scripts/pfm_choose.py --reference B   # D-66: B's best seed by the same rule registered, NOT
+                                                     # chosen (for reference on held-out only)
     ... --drive "<path to MyDrive/omnisight>"        # default G:/My Drive/omnisight
 
 Writes `results/x22_choice.json` on Drive. The held-out run is `notebooks/pfm_heldout_gpu.ipynb` (Colab).
@@ -50,6 +52,36 @@ def choose(best: dict[tuple[str, int], float | None]) -> tuple[str, int] | None:
     return max(ok, key=lambda k: (best[k], -k[1], -SERVABLE.index(k[0])))
 
 
+def best_seed(best: dict[tuple[str, int], float | None], version: str) -> tuple[str, int] | None:
+    """D-65's rule within one version: its highest seed, the lower seed on a tie (D-66's reference)."""
+    ok = [k for k, score in best.items() if k[0] == version and score is not None]
+    return max(ok, key=lambda k: (best[k], -k[1])) if ok else None
+
+
+def register(drive: Path, records: dict[str, dict], version: str, seed: int, b: dict, chosen: bool) -> str:
+    """Copy the seed's `best.pt` (checked to hold epoch `b["epoch"]`) to its run folder, write its `run.json` and
+    list it in `model_runs.json`, as the chosen run only if `chosen`."""
+    rid = run_id(version, seed, b["epoch"])
+    source = drive / "models" / "pfm" / f"v5-{version.lower()}" / f"seed{seed}" / "best.pt"
+    _, state = train_pfm.load(source, "cpu")
+    if state["epoch"] != b["epoch"]:
+        raise SystemExit(f"{source} holds epoch {state['epoch']}, not {b['epoch']}")
+    folder = drive / pfm_runs.RUNS / rid
+    folder.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, folder / pfm_runs.CHECKPOINT)
+    r = records[version]
+    run = pfm_runs.record(
+        drive, rid, config=r["config"], epochs_trained=len(r["history"][str(seed)]), epoch=b["epoch"], seed=seed,
+        thresholds={d: b["validation"][d]["theta"] for d in DOMAINS}, validation=b["validation"], commit=r["commit"],
+        gpu=r["gpu"], torch=r["torch"], encoder="internvideo2", false_alarm_rule=train_pfm.FALSE_ALARM,
+        warning_rule="1 - p(Normal) >= theta (D-65)", chosen_by_rule=chosen,
+        samples_sha256={d: hashlib.sha256((ROOT / "datasets" / "samples" / f"{d}.csv").read_bytes()).hexdigest()
+                        for d in DOMAINS},
+        created_at=time.strftime("%Y-%m-%d %H:%M"))
+    pfm_runs.register(drive, run, chosen=chosen)
+    return rid
+
+
 def spread(scores: list[float]) -> dict:
     return {"mean": float(np.mean(scores)), "spread": float(max(scores) - min(scores)), "seeds": scores}
 
@@ -76,7 +108,8 @@ def main() -> int:
     if "--drive" in args:
         i = args.index("--drive")
         drive, args = Path(args[i + 1]), args[:i] + args[i + 2:]
-    register = "--register" in args
+    do_register = "--register" in args
+    reference = args[args.index("--reference") + 1] if "--reference" in args else None
 
     records = read(drive)
     best = bests(records)
@@ -115,25 +148,16 @@ def main() -> int:
                          "thresholds": {d: b["validation"][d]["theta"] for d in DOMAINS}}
         print(f"\nserved: {rid} (version {v}, seed {s}, epoch {b['epoch']}), UCF-Crime within-window AUC "
               f"{score[chosen]:.4f}, θ {out['chosen']['thresholds']}")
-        if register:
-            source = drive / "models" / "pfm" / f"v5-{v.lower()}" / f"seed{s}" / "best.pt"
-            _, state = train_pfm.load(source, "cpu")
-            if state["epoch"] != b["epoch"]:
-                raise SystemExit(f"{source} holds epoch {state['epoch']}, not {b['epoch']}")
-            folder = drive / pfm_runs.RUNS / rid
-            folder.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, folder / pfm_runs.CHECKPOINT)
-            r = records[v]
-            run = pfm_runs.record(
-                drive, rid, config=r["config"], epochs_trained=len(r["history"][str(s)]), epoch=b["epoch"], seed=s,
-                thresholds=out["chosen"]["thresholds"], validation=b["validation"], commit=r["commit"], gpu=r["gpu"],
-                torch=r["torch"], encoder="internvideo2", false_alarm_rule=train_pfm.FALSE_ALARM,
-                warning_rule="1 - p(Normal) >= theta (D-65)",
-                samples_sha256={d: hashlib.sha256((ROOT / "datasets" / "samples" / f"{d}.csv").read_bytes()).hexdigest()
-                                for d in DOMAINS},
-                created_at=time.strftime("%Y-%m-%d %H:%M"))
-            pfm_runs.register(drive, run, chosen=True)
+        if do_register:
+            register(drive, records, v, s, b, chosen=True)
             print(f"registered {rid} as the chosen run ({drive / pfm_runs.INDEX})")
+    if reference is not None:
+        ref = best_seed(score, reference)
+        if ref is None:
+            raise SystemExit(f"version {reference} has no passing seed")
+        rid = register(drive, records, *ref, best[ref], chosen=False)
+        print(f"registered {rid} for reference only, NOT chosen by the rule (the chosen run is unchanged)")
+        return 0
     path = drive / "results" / "x22_choice.json"
     path.write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(path)

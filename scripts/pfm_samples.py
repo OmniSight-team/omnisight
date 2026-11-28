@@ -43,15 +43,17 @@ from encode_pfm_windows import (
 
 ROOT = Path(__file__).resolve().parents[1]
 UCA_MARGIN_S = 8.0  # D-49: a UCA-timed window ends this long before the event
+SHIFT_FLAG = "shift_8s"  # D-66: a held-out window rebuilt by D-49's rule, also ending 8 s before its event
 HEADER = ("sample_id", "domain", "clip_key", "split", "label", "nominal_length_s", "window_start_s",
           "window_end_s", "start_frame", "end_frame", "length", "t_s", "tau_s")
 
 
 def event_start_s(row: dict) -> float:
     """When a positive window's event starts: the window's end (D-24, half-open), or 8 s after it on
-    a UCA-timed UCF-Crime window (D-49)."""
+    a UCA-timed UCF-Crime window (D-49) and on a held-out window shifted by D-66."""
     end = float(row["window_end_s"])
-    return end + UCA_MARGIN_S if "uca_margin" in row["flags"].split(";") else end
+    flags = row["flags"].split(";")
+    return end + UCA_MARGIN_S if "uca_margin" in flags or SHIFT_FLAG in flags else end
 
 
 def build(windows: dict[str, list[dict]], dataset: str) -> list[dict]:
@@ -108,9 +110,10 @@ class Store:
     """The samples' vectors: each video's grid vectors read once from an encoder's folder, and per
     sample the rows of its sequence's frames. A window's grid points are evenly spaced, but not always
     consecutive rows: a UCF-Crime normal video's 30 s and 60 s windows sit at independent positions,
-    so the video's grid interleaves their points."""
+    so the video's grid interleaves their points. `extra_dir` (D-66): a second folder of the same encoder
+    and grid whose points, where a video has a file there, are added to the first folder's."""
 
-    def __init__(self, samples: list[dict], vectors_dir: Path) -> None:
+    def __init__(self, samples: list[dict], vectors_dir: Path, extra_dir: Path | None = None) -> None:
         blocks, offsets, starts = [], {}, 0
         self.length = np.array([int(s["length"]) for s in samples], np.int64)
         self.pointer = np.concatenate([[0], np.cumsum(self.length)])
@@ -121,6 +124,12 @@ class Store:
             if key not in offsets:
                 with np.load(out_file(vectors_dir, key)) as f:
                     vectors, frames = f["vectors"], f["frame_index"].tolist()
+                if extra_dir is not None and out_file(extra_dir, key).is_file():
+                    with np.load(out_file(extra_dir, key)) as f:
+                        if set(frames) & set(f["frame_index"].tolist()):
+                            raise ValueError(f"{key}: the two folders share grid points")
+                        vectors = np.concatenate([vectors, f["vectors"]])
+                        frames = frames + f["frame_index"].tolist()
                 blocks.append(vectors.astype(np.float32))
                 offsets[key], frame_rows[key] = starts, {fr: r for r, fr in enumerate(frames)}
                 starts += len(vectors)

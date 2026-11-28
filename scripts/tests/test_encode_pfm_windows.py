@@ -101,6 +101,20 @@ def test_every_video_gets_its_grid_clips_in_order_across_chunks(ccd, monkeypatch
     assert (summary["done"], summary["clips"], summary["sessions"]) == (3, len(expected), ["s1"])
 
 
+def test_only_encodes_the_given_grid_points_of_the_given_videos(ccd):
+    # D-66: a second folder holds only the points another folder of the same grid lacks
+    data, windows = ccd
+    encoder = StandIn()
+    only = {"Crash/1": [1, 6]}
+    manifest = runner.run({"Crash/1": windows["Crash/1"]}, data, data / "extra", encoder, window, PINS, 0.5, only=only)
+
+    assert not manifest["failed"]
+    with np.load(data / "extra" / "Crash/1.npz") as f:
+        assert f["frame_index"].tolist() == [1, 6] and f["vectors"].shape == (2, 512)
+    assert len(encoder.clips) == 2
+    assert np.allclose(encoder.clips[1], runner.clip_of(6, 10.0, window), atol=4)
+
+
 def test_a_rerun_skips_done_videos_and_a_folder_holds_one_encoder(ccd):
     data, windows = ccd
     runner.run({"Crash/1": windows["Crash/1"]}, data, data / "out", StandIn(), window, PINS, 0.5)

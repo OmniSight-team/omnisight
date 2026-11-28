@@ -293,3 +293,50 @@ applies that rule to X21's nine seeds, measures the one chosen model on held-out
 
 The forecaster trained under D-65 is chosen, registered and measured once: SM-3 passes, SM-2 fails (0.574). CCD
 forecasts well; UCF-Crime's vectors still say little about a coming crime. Next: OMNI-910 serves this run.
+
+---
+
+## OMNI-X23 · Held-out UCF-Crime measured like training: event windows shifted 8 s earlier
+
+### Why this ticket exists
+
+SM-2 failed on held-out (0.5736 against 0.70; validation 0.8172). Train and validation windows end 8 s before the
+event (D-49), held-out's at it, so the `close` seconds sit at another place in the window than the model was trained
+and chosen on. The first version of this ticket trimmed the last 8 s; that cannot change SM-2, because a second's
+score depends only on the window's start up to that second, so the `close` and `far` scores stay the same. Ahmad
+rewrote it to move the windows' start instead.
+
+### What was done
+
+2026-11-28.
+- The ticket rewritten (shift, not trim); **D-66** written before any number: held-out UCF-Crime's event windows
+  rebuilt by D-49's rule (30 s `[event − 38, event − 8)`, 60 s `[event − 68, event − 8)`), A stays served with
+  validation's `θ_d`, B for reference only, SM-2 on the shifted windows with D-65's ranges, the unshifted 0.5736
+  kept beside; also, for reading only, the unshifted AUC on the same videos
+- `scripts/build_heldout_shift.py` (new): the shifted windows from the committed held-out windows (no database, no
+  video), flagged `shift_8s`; their samples by `pfm_samples.build`; the missing grid points per video (checked to
+  be on the existing grid). Committed: `datasets/windows/ucf_crime_heldout_shift8.csv` (206 windows, 103 per length;
+  58 of the 30 s and 78 of the 60 s shortened) and `datasets/samples/ucf_crime_heldout_shift8.csv` (5,196 samples).
+  74 windows (37 videos, both lengths) get none: their event is 8 s or less into the video
+- **Missing vectors: 222 grid points in 31 videos** (the 60 s windows' up to 8 s before the old 60 s window); every
+  30 s window's points exist already
+- `pfm_samples.py`: `event_start_s` reads `shift_8s` as `uca_margin` (event at the end + 8 s); `Store(...,
+  extra_dir=)` adds a second folder's points to a video's (refusing points in both)
+- `encode_pfm_windows.run(..., only=)`: per video, the grid frames to encode instead of the whole grid
+- `scripts/pfm_choose.py --reference B`: B's best seed by D-65's rule (`pfm-v5b-s1-e14`, 0.7560) registered with
+  `chosen_by_rule: false`; `model_runs.json`'s chosen run is still `pfm-v5a-s1-e14`
+- `notebooks/pfm_heldout_shift_gpu.ipynb` (new): encodes the 222 points into `internvideo2_shift8/` (asserting the
+  pins equal the existing folder's and the old folder lacks exactly those points), then measures both runs on the
+  shifted windows (two folders together) and on the unshifted windows of the same 103 videos, overall and per
+  length → `results/x23_heldout_shift8.json`; cell 4 prints SM-2
+
+### Verification performed
+
+- Seven new tests (`test_build_heldout_shift.py`, one in `test_encode_pfm_windows.py`, one in `test_pfm_choose.py`):
+  a window's new place and flags (`shortened` when it starts at 0; none for an event at 8 s; refused on a UCA time
+  or a normal window); its samples' τ 8.03-37.03 s, each sequence from the window's start; the missing points are 8
+  points 1 s apart before the old 60 s window, the rest on the old grid; the store reads a 60 s sequence across both
+  folders and refuses one folder alone or a point in both; the committed files equal the build; `only` encodes just
+  the given points; B's reference is its own best seed. 67 tests in the PFM, samples and encoding files pass
+- Data only, no model run on held-out: the shifted samples load from the existing folder for the 72 videos with no
+  new points, and the 31 others lack exactly the 222 listed points

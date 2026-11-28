@@ -30,3 +30,9 @@ def test_a_difference_is_claimed_only_above_the_larger_spread():
     assert abs(c["difference"] - 0.11) < 1e-9 and abs(c["larger_spread"] - 0.10) < 1e-9 and c["claimed"]
     c = pfm_choose.compare([0.70, 0.80], [0.79, 0.81])  # difference 0.05 < 0.10
     assert not c["claimed"]
+
+
+def test_the_reference_is_a_versions_own_best_seed():
+    best = {("A", 1): 0.82, ("B", 0): 0.75, ("B", 1): 0.76, ("B", 2): 0.76, ("C", 0): 0.9}
+    assert pfm_choose.best_seed(best, "B") == ("B", 1)
+    assert pfm_choose.best_seed({("B", 0): None}, "B") is None
