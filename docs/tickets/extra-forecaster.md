@@ -137,11 +137,11 @@ epochs, patience 30; 3 seeds (0, 1, 2); `θ_d` by the 10% rule on validation nor
 - [x] **Does sharing help:** B's and C's UCF-Crime numbers the same way. If C is clearly better, a follow-up ticket
       trains separate models per dataset
 - [x] **Validation table:** every seed of every version, both datasets, all eight measures, and the windows kept
-- [ ] **Held-out once**, only for the served model, all eight measures (plus the τ [0, 8) s within-window AUC):
+- [x] **Held-out once**, only for the served model, all eight measures (plus the τ [0, 8) s within-window AUC):
   - **SM-2:** within-window AUC **≥ 0.70** on held-out UCF-Crime
   - **SM-3:** lead time **≥ 1.80 s** on held-out CCD
-- [ ] `results.md`: SM-2's and SM-3's rows, this ticket's row; `decisions.md`: the D-number's result
-- [ ] OMNI-910 serves the chosen model (only its run id changes)
+- [x] `results.md`: SM-2's and SM-3's rows, this ticket's row; `decisions.md`: the D-number's result
+- [x] OMNI-910 serves the chosen model (only its run id changes)
 
 ---
 

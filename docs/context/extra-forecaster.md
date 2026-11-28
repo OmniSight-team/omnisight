@@ -275,7 +275,21 @@ applies that rule to X21's nine seeds, measures the one chosen model on held-out
 - Cell 5 run on **validation** (not held-out) with the registered run: it runs, and gives the history's numbers.
   One CCD normal window sits exactly at `θ`, and the CPU's rounding tips it (false alarms 0.102 against 0.100)
 - `pfm_runs.py list` shows `pfm-v5a-s1-e14` as the chosen run
+- Held-out once on Colab (Ahmad, Tesla T4, commit `35a5bd5`), cell 5's printout: **SM-3 passes** (CCD mTTA
+  2.74 s, 242 of 243 warned, 11.1% of normal windows); **SM-2 fails** (UCF-Crime within-window AUC 0.5736 against
+  0.70; τ [0, 8) s 0.6749). Per length: 30 s windows 0.44 with flat-line 0.34, 60 s 0.70 with flat-line 0.70. On
+  held-out the score follows the position in the window, which validation's flat-line (0.568) did not show
+- Recorded: `results.md` (the entry, SM-2's and SM-3's rows, this ticket's row), D-65's result in `decisions.md`.
+  SM-2's target is not revised (D-65 fixed it before training)
 
 ### Not verified
 
-- Held-out (Ahmad, on Colab): `notebooks/pfm_heldout_gpu.ipynb`, `RUN_ID` empty, after this is pushed
+- The other eight seeds on held-out, by D-65's rule (only the served one); B, whose flat-line was lower on
+  validation, might hold up better on held-out, but measuring it now would be choosing on held-out
+- OMNI-910 itself is not built; `pfm_runs.py download` now fetches `pfm-v5a-s1-e14`. Its alert rule must be
+  `1 − p(Normal) ≥ θ_d` (K-37)
+
+### Result
+
+The forecaster trained under D-65 is chosen, registered and measured once: SM-3 passes, SM-2 fails (0.574). CCD
+forecasts well; UCF-Crime's vectors still say little about a coming crime. Next: OMNI-910 serves this run.

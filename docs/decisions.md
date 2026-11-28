@@ -68,7 +68,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-62 | **Deviation:** the PFM may answer only "an event is coming" or Normal (`Config.labels = "event"`: UCF-Crime's 13 event classes merged; CCD unchanged), trained as v2; it replaces v2 only if, on UCF-Crime's validation, its AUC beats v2's by more than the larger seed spread and its rise is not below v2's | 2026-11-27 | Agreed (written before training) |
 | D-63 | **Revision:** SM-2 becomes "an event is coming": held-out UCF-Crime ROC-AUC ≥ 0.70, with false alarms per hour and lead time reported beside it; Phase A's "the true event in the top 3" is still reported for models with classes | 2026-11-27 | Agreed (written before the measurement) |
 | D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the pooled AUC still reported. **Amended before training:** only the event-only model is trained again, each seed's epoch chosen by UCF-Crime's validation within-window AUC; the served model is its best seed by that measure if its flat-line check is ≤ 0.60; v2 is measured for reference only | 2026-11-27 | Agreed (written before any of these numbers was computed; amended before training) |
-| D-65 | **Deviation** (Algorithm 4) and **revision** (SM-2's range): the forecaster trained to forecast: Fix 1 distance-weighted class error, Fix 2 ranking inside the window, versions A, B, C; eight measures; the epoch by UCF-Crime's within-window AUC among epochs passing the flat-line check (≤ 0.60); SM-2 `close` τ [8, 13) s | 2026-11-28 | Agreed (written before training) |
+| D-65 | **Deviation** (Algorithm 4) and **revision** (SM-2's range): the forecaster trained to forecast: Fix 1 distance-weighted class error, Fix 2 ranking inside the window, versions A, B, C; eight measures; the epoch by UCF-Crime's within-window AUC among epochs passing the flat-line check (≤ 0.60); SM-2 `close` τ [8, 13) s | 2026-11-28 | Agreed (written before training); SM-3 pass, SM-2 fail (OMNI-X22) |
 
 ---
 
@@ -1765,3 +1765,11 @@ batch 256, gradient clip 1.0; up to 120 epochs, patience 30; seeds 0, 1, 2.
     `far` [20, 30) s
   - **SM-3 (unchanged, D-23):** lead time **≥ 1.80 s** on held-out CCD, measured as measure 3 at `θ_d`
 - Phase A's Algorithm 4 is rewritten after the results, not before
+
+**Result (OMNI-X22, 2026-11-28):** every seed had a passing epoch. Served: **`pfm-v5a-s1-e14`** (A, seed 1, epoch
+14; UCF-Crime validation within-window AUC 0.8172, flat-line 0.568; `θ` CCD 0.0581, UCF-Crime 0.6281). Fix 2: A
+0.7911 against B 0.7419, within A's spread (0.052), not claimed. Sharing: C 0.7521 against B, not claimed; no
+follow-up. Held-out: **SM-3 passes** (2.74 s, 242 of 243 warned); **SM-2 fails** (0.5736 against 0.70; 30 s
+windows 0.44, 60 s 0.70 with a flat-line of 0.70). Nothing above is changed by the result, and SM-2's target is not
+revised. Phase A's Algorithm 4 is rewritten with these numbers after the sprint. The served run's warning rule is
+`1 − p(Normal) ≥ θ_d`, not D-59's `max(p) ≥ θ_d` (K-37).
