@@ -356,3 +356,39 @@ rewrote it to move the windows' start instead.
 
 Measured where training puts the seconds, the served forecaster passes SM-2 (0.7851, from 0.5736), with the 60 s
 drift said beside it. Next: OMNI-910 serves `pfm-v5a-s1-e14`.
+
+---
+
+## OMNI-X24 · The rise rule: warn when a camera's score jumps, not when it is high
+
+### Why this ticket exists
+
+X23 showed the served model rises toward a crime inside a window (within-window AUC 0.7851) while its level does not
+tell crime windows from normal ones (per-window AUC 0.5123), so one fixed line warns on 31 of 206 crime windows. A
+rule that asks whether this camera's score just jumped uses the skill the model has.
+
+### What was done
+
+2026-11-29.
+- **D-67** written before any number: `rise(t) = score(t) − mean(score over [t − 20 s, t − 5 s))` of the same
+  window, at least 10 s of baseline (so a window's first 15 s never warn); `δ` set on UCF-Crime validation normal
+  windows at a false-alarm share `F` (5% main; 2%, 10% beside); CCD keeps the level line; A served, B for reference
+  only; held-out UCF-Crime as D-66. One point the ticket left open, fixed in D-67: the test is decided at `F` = 5%
+  (more held-out crime windows warned than the level line, both lines set on validation at 5%), with the two rules'
+  held-out false-alarm shares reported beside it, since neither is exactly 5% on held-out
+- `scripts/pfm_rise.py` (new): `rise` per second; `line` (the lowest value letting at most `F` of the normal
+  windows warn, for `δ` and `θ` alike); `fit` on validation; `report` at given lines, overall and per window length
+  (`pfm_measures.at_threshold`, `per_window_auc` and `average_precision` reading the rise through a stand-in `p`);
+  `wins` (D-67's test); `run`, the Colab run (vectors copied once, both runs, validation then held-out, printout,
+  `results/x24_rise.json`)
+
+### Verification performed
+
+- Four new tests (`test_pfm_rise.py`): the rise over a jump (0.7 at the jump, the baseline sliding past it after),
+  NaN before 15 s; a flat normal window never warns, a jump warns at the jump (lead 17 s, worked out by hand), a 14 s
+  window never warns while the level line warns on the flat window at once; `δ` lets exactly 1 of 20 normal windows
+  warn at 5% and 2 at 10%, and is above 0 on a flat window at `F` = 0; `fit` on one split, `report` on another
+  with the same lines, per length, and the rise's per-window AUC. 54 tests in the PFM files pass
+- On **validation only** (laptop CPU, the served run): `fit` and `report` run on the real data in about 5 s
+  (UCF-Crime) and 1 s (CCD), and the lines give at most 5% of validation normal windows warned. Held-out was not
+  touched; these numbers are not recorded

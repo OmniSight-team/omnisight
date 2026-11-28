@@ -70,6 +70,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the pooled AUC still reported. **Amended before training:** only the event-only model is trained again, each seed's epoch chosen by UCF-Crime's validation within-window AUC; the served model is its best seed by that measure if its flat-line check is ≤ 0.60; v2 is measured for reference only | 2026-11-27 | Agreed (written before any of these numbers was computed; amended before training) |
 | D-65 | **Deviation** (Algorithm 4) and **revision** (SM-2's range): the forecaster trained to forecast: Fix 1 distance-weighted class error, Fix 2 ranking inside the window, versions A, B, C; eight measures; the epoch by UCF-Crime's within-window AUC among epochs passing the flat-line check (≤ 0.60); SM-2 `close` τ [8, 13) s | 2026-11-28 | Agreed (written before training); SM-3 pass, SM-2 fail (OMNI-X22) |
 | D-66 | **Revision** (how SM-2 is measured): held-out UCF-Crime's event windows shifted 8 s earlier, as training's (D-49's rule); A stays served, B for reference only; the unshifted 0.5736 kept beside | 2026-11-28 | Agreed (written before the run); SM-2 0.7851, pass (OMNI-X23) |
+| D-67 | **Revision** (the alert rule, UCF-Crime): warn when the score rises by `δ` over the same camera's mean of 20-5 s before, `δ` set on validation normal windows at a false-alarm share of 5% (2%, 10% beside); CCD keeps the level line; it wins only with more held-out crime windows warned at 5% | 2026-11-29 | Agreed (written before the run) |
 
 ---
 
@@ -1813,3 +1814,37 @@ beside it, the same on the 103 videos measured, so the change is the shift alone
 climb (flat-line 0.6969, over 0.60), so part of the 60 s rise is time. B for reference only, not chosen: 0.7361,
 flatter (0.3891). Per-window AUC 0.5123: the model ranks seconds inside a window, not windows. Nothing above
 changes, and the served model is unchanged.
+
+## D-67 · The rise rule: UCF-Crime warns when a camera's score jumps, not when it is high · 2026-11-29
+
+**Revision** of the alert rule (D-59's level line `1 − p(Normal) ≥ θ_d`, D-65) for UCF-Crime. Written before any
+number of OMNI-X24 exists; **nothing here changes once one does.** Said openly: the rule was thought of after seeing
+X23's held-out result (within-window AUC 0.7851, per-window AUC 0.5123). Nothing is trained; the model is unchanged.
+
+**Why:** on held-out UCF-Crime (shifted windows, D-66) the served model's score rises toward the crime inside a
+window, but its level does not tell a crime window from a normal one, so one fixed line for every camera warns on
+only 15% of crime windows (31 of 206), and moving the line catches crimes and normal footage at the same rate. Each
+camera has its own usual level; a live camera's recent scores are known, so the alarm can ask whether this camera's
+score just jumped.
+
+**The rule:**
+- **Score** of a second: `1 − p(Normal)`. **The rise** at a second `t`: `rise(t) = score(t) − mean(score of the
+  same window's seconds in [t − 20 s, t − 5 s))` (live: the same camera). It exists only if that baseline holds at
+  least 10 s of footage (10 grid points at 1 s); otherwise the second cannot warn, so a window's first 15 s never do
+- **A second warns** when `rise(t) ≥ δ`. **`δ`** is set on **UCF-Crime validation normal windows** only: the
+  lowest `δ` at which at most a share `F` of them have a warning second. **`F` = 5% is the main level**; 2% and 10%
+  are reported beside it. Held-out is given validation's `δ`
+- **CCD keeps the level line** (its windows hold about 3.5 s, too short for the baseline): `θ` set on CCD validation
+  normal windows at the same three `F`
+- **The model:** the served `pfm-v5a-s1-e14`. B (`pfm-v5b-s1-e14`) beside it for reference only, not chosen
+- **Held-out UCF-Crime:** the shifted event windows (D-66) and the unchanged normal windows. CCD held-out as X22
+- **The measures,** at each `F`, validation and held-out, UCF-Crime overall and per window length (30 s, 60 s):
+  detection rate (crime windows with a warning second; every measured second is before the event), lead time (mean
+  `τ` of each warned crime window's first warning), false alarms (share of normal windows warned, and alarms per
+  hour of normal footage, a run of warning seconds being one alarm), the per-window AUC and AP of the rise (each
+  window's largest rise; a window with no rise counts as the lowest), and the level line's detection, lead and
+  false alarms at the same `F` beside it. CCD at the three `F` with the level line: detection, lead, false alarms
+- **The rise rule wins** only if, at **`F` = 5%**, it warns on **more held-out UCF-Crime crime windows** than the
+  level line, both lines set on validation at 5%. The two rules' held-out false-alarm shares are reported beside it
+  (they are set on validation, so neither is exactly 5% on held-out). If it wins, OMNI-911 raises UCF-Crime alerts
+  with it, `services/pfm` keeping each camera's last 20 s of scores, `δ` from here; if not, the level line stays

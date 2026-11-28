@@ -201,3 +201,44 @@ before it, and nothing is chosen on it.
 - [x] **Record the same day:** `results.md` (SM-2's row: shifted and unshifted side by side, and this ticket's
       section), `decisions.md` (the D-number's result). If SM-2 still fails, the reason in one short paragraph; the
       target is not lowered
+
+---
+
+## OMNI-X24 · The rise rule: warn when a camera's score jumps, not when it is high · Sun 29 Nov
+
+**Why:** on held-out UCF-Crime (shifted windows, D-66) the served model rises toward the crime **inside a window**
+(within-window AUC 0.7851), but its level does not tell a crime window from a normal one (per-window AUC 0.5123). One
+fixed line for every camera therefore warns on only 15% of crime windows, and moving the line cannot help: it catches
+crimes and normal windows at the same rate. Each camera has its own usual level, so the alarm should ask "did **this**
+camera's score just jump?", the skill the model has shown. A live camera runs all day, so the system knows its recent
+scores. Nothing is trained; only the alarm rule and the measures change. **[SM-2, FR alerts]**
+
+- [x] **Decision first** (a new D-number), before any number is computed:
+  - **The rise** at a second `t`: `rise(t) = score(t) − mean(score over [t − 20 s, t − 5 s))`, with
+    score = `1 − p(Normal)`, from the **same window** (live: the same camera). A second warns only if at least
+    10 s of that baseline exist, so the first seconds of a window cannot warn
+  - **The rise line `δ`** is set on **validation normal windows** only: the lowest `δ` at which at most a share `F` of
+    them warn at any second. **`F` = 5% is the main level**; 2% and 10% are reported beside it. Nothing is set on
+    held-out
+  - **UCF-Crime uses the rise rule.** CCD keeps the level line (its windows hold about 3.5 s, too short for a
+    20 s baseline), reported at the same three false-alarm levels
+  - **The model is the served one, `pfm-v5a-s1-e14`.** B (`pfm-v5b-s1-e14`) beside it for reference only, not chosen
+  - **Held-out UCF-Crime: the shifted windows (D-66)**, as training's; normal windows unchanged
+  - **Compared with the level line at the same false-alarm level**: the rise rule is better only if it warns on more
+    held-out crime windows at the same `F`. Said openly: this rule was thought of after seeing X23's result
+- [x] **Code:** the rise per second and `δ` from the false-alarm share, tested on hand-made windows (a flat window
+      never warns; a jump of more than `δ` warns at the jump; too little history never warns)
+- [ ] **Measures, at each `F` (2%, 5%, 10%), validation and held-out, UCF-Crime overall and per window length:**
+  1. **Detection rate:** the share of crime windows warned before the event
+  2. **Lead time (mTTA):** the mean seconds before the event of each crime window's first warning
+  3. **False alarms:** the share of normal windows warned, and alarms per hour of normal footage
+  4. **Per-window AUC of the rise:** each window's largest rise, crime windows against normal windows (does the
+     jump tell them apart, where the level could not: 0.5123)
+  5. **AP of the rise**
+  6. The level line's detection rate at the same `F`, beside it
+  - CCD at the three levels with the level line: detection, lead time, false alarms
+- [ ] **Run** on Colab (the existing vectors, no encoding, no training): validation for `δ`, then held-out once
+- [ ] **Record the same day:** `results.md` (this ticket's section; the alert rule the product uses), `decisions.md`
+- [ ] **If the rise rule wins:** OMNI-911 raises UCF-Crime alerts with it. `services/pfm` keeps each camera's last
+      20 s of scores to compute the baseline; `δ` comes from this ticket. If it does not win, the level line stays
+      and the result is recorded
