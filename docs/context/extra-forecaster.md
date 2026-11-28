@@ -340,3 +340,19 @@ rewrote it to move the windows' start instead.
   the given points; B's reference is its own best seed. 67 tests in the PFM, samples and encoding files pass
 - Data only, no model run on held-out: the shifted samples load from the existing folder for the 72 videos with no
   new points, and the 31 others lack exactly the 222 listed points
+- Run on Colab (Ahmad, Tesla T4, commit `f5f7415`): the 222 points encoded in 128 s of encoder time (0.58 s per
+  clip), 31 of 31 videos, none failed. **SM-2: 0.7851 on the shifted windows, pass** (30 s 0.8071, 60 s 0.7631);
+  the unshifted AUC on the same videos is 0.5736, X22's number, so the change is the shift. B (reference only)
+  0.7361. The numbers are in `results.md`
+- Recorded: `results.md` (the entry, SM-2's row with shifted and unshifted side by side), D-66's result
+
+### Not verified
+
+- Whether the 60 s rise is the event or time: their normal windows climb as much (flat-line 0.6969). Only the 30 s
+  windows show a rise with flat normal footage
+- Telling crime windows from normal ones (per-window AUC 0.5123): not asked by SM-2, and not reached
+
+### Result
+
+Measured where training puts the seconds, the served forecaster passes SM-2 (0.7851, from 0.5736), with the 60 s
+drift said beside it. Next: OMNI-910 serves `pfm-v5a-s1-e14`.

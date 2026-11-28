@@ -194,10 +194,10 @@ before it, and nothing is chosen on it.
       missing grid points per video; the encoder able to encode only those; the vector store able to read the two
       folders together. Tested on hand-made windows: the shifted window's place and flags, the event with no window,
       the grid points kept on the existing grid, the missing points, the sequences read across both folders
-- [ ] **Encode** (Colab): the missing grid points only, into the new folder; every video done, none failed
-- [ ] **Run** (Colab, the new folder plus the existing one): the served model and B's reference, held-out UCF-Crime,
+- [x] **Encode** (Colab): the missing grid points only, into the new folder; every video done, none failed
+- [x] **Run** (Colab, the new folder plus the existing one): the served model and B's reference, held-out UCF-Crime,
       shifted. All eight measures, overall and per window length (30 s / 60 s), and how many windows each range
       keeps and skips
-- [ ] **Record the same day:** `results.md` (SM-2's row: shifted and unshifted side by side, and this ticket's
+- [x] **Record the same day:** `results.md` (SM-2's row: shifted and unshifted side by side, and this ticket's
       section), `decisions.md` (the D-number's result). If SM-2 still fails, the reason in one short paragraph; the
       target is not lowered

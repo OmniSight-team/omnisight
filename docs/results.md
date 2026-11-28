@@ -26,7 +26,7 @@ are in `known-issues.md`; how the work went is in `context/`.
 | TC-1 | Live camera and uploaded file together: both decode, only motion (or heartbeat) forwarded, the camera live on the wall throughout | 2 runs, 15 of 15 checks each: file 1,930 of 1,930, 356 admitted, 0 violations; live counters exact, every stored row admitted; camera live at every sample | **Pass, complete** | 2026-09-26, 2026-10-03 | OMNI-316, OMNI-511 |
 | NFR-4 (revised, D-19) | 3 live feeds per machine of this class, sustained over 10 min (Phase A: 10) | 3 realistic feeds, wall open, 10 min: 0 dropped, worst 0.17 s, always live. 4: not over 10 min, before and after the one-operation grid (after: 0 dropped, one feed 2 s not live). 10: not (OMNI-509, OMNI-510a) | **Pass** against the revised target (preliminary, one machine) | 2026-10-03, 2026-10-16 | OMNI-509, OMNI-510a, NFR-4 revision, OMNI-613 |
 | SM-3 | **mTTA ≥ 1.80 s** on CCD's held-out crash clips (D-2, rule D-23: half the held-out median pre-event footage, 3.60 s; Phase A's 15 s revised with CCD) | **2.74 s** with the served model (`pfm-v5a-s1-e14`, D-65): 242 of 243 clips warned, 11.1% of 450 normal clips falsely. Before: v2 2.91 s, v1 3.44 s (its scene control matched it, K-35) | **Pass** | 2026-11-28 | OMNI-X22 |
-| SM-2 | **Revised (D-65):** an event is coming, within each window: held-out UCF-Crime within-window AUC ≥ 0.70 (seconds 8-13 s before the event against 20-30 s before it, same window); the other seven D-65 measures beside it (D-64: 0-10 s; D-63: pooled AUC; Phase A: the real event in the top 3 for ≥ 70% of positive windows) | **0.5736** with `pfm-v5a-s1-e14` (validation 0.8172); 30 s windows 0.44, 60 s 0.70; τ 0-8 s 0.675; pooled AUC 0.569, 57 of 280 windows warned, 6.3% of normal | **Fail** (target not revised) | 2026-11-28 | OMNI-X22 |
+| SM-2 | **Revised (D-65, measured by D-66):** an event is coming, within each window: held-out UCF-Crime within-window AUC ≥ 0.70 (seconds 8-13 s before the event against 20-30 s before it, same window), the event windows placed as training's (ending 8 s before the event, D-66); the other seven D-65 measures beside it (D-64: 0-10 s; D-63: pooled AUC; Phase A: the real event in the top 3 for ≥ 70% of positive windows) | **0.7851** with `pfm-v5a-s1-e14`, windows shifted (D-66; 30 s 0.807, 60 s 0.763, whose normal windows drift: flat-line 0.70). Unshifted (X22): 0.5736 (30 s 0.44, 60 s 0.70). Per-window AUC 0.512, 31 of 206 windows warned, 6.3% of normal | **Pass** (D-66; unshifted fail kept) | 2026-11-28 | OMNI-X22, OMNI-X23 |
 | Forecaster trained to forecast (D-65; Algorithm 4 revised, no Phase A target) | The served model chosen on validation by a rule written before training; Fix 1 and Fix 2 claimed only beyond the seed spread | `pfm-v5a-s1-e14` (A, seed 1): UCF-Crime within-window AUC 0.8172, flat-line 0.568 on validation. Fix 2: −0.049, not claimed; UCF-Crime alone: +0.010, not claimed | **Chosen** | 2026-11-28 | OMNI-X22 |
 | TC-5, first half | Sliding windows on held-out UCF-Crime (30 s, 60 s) and CCD: top-3 and lead time per clip | 1,273 windows, one row each (`results/omni906_windows.csv`): UCF-Crime top-3 48.6% / 45.0%, lead 18.5 / 27.5 s; CCD top-3 100%, lead 3.44 s | **Done** (produced per clip) | 2026-11-27 | OMNI-906 |
 | UCF-Crime training event times (data for SM-2, SM-4; no Phase A target) | Every event time from an annotation, none guessed | 594 of 810 training anomalies timed from UCA by a written rule (6 not in UCA, 210 no match); against the official start on 110 test anomalies: median 3.0 s, mean 11.3 s apart, 34% within 1 s | **Measured** (D-21) | 2026-10-07 | OMNI-603 |
@@ -2970,3 +2970,41 @@ nothing warns.
 **SM-2's target is not revised:** D-65 fixed it before training, and lowering it now would fit the target to the
 result. **Not covered:** the other eight seeds on held-out (D-65: only the served one); B on held-out, whose
 flat-line was lower on validation; TC-5's second half.
+
+## OMNI-X23 · Held-out UCF-Crime with its event windows shifted 8 s earlier (D-66) · 2026-11-28
+
+Colab, Tesla T4, commit `f5f7415`, `notebooks/pfm_heldout_shift_gpu.ipynb`; `results/x23_heldout_shift8.json` on
+Drive. Held-out UCF-Crime's event windows rebuilt as training's (30 s `[event − 38, event − 8)`, 60 s
+`[event − 68, event − 8)`, D-49's rule): 206 windows in 103 videos; 74 windows (37 videos, event 8 s or less in) get
+none. The missing 222 grid points (31 videos, the 60 s windows' first 8 s) encoded with OMNI-902's encoder, pins and
+clip into `embeddings/pfm/ucf_crime/internvideo2_shift8/` (0.58 s per clip on the T4, none failed). Normal windows
+(300) unchanged. Validation's `θ`; nothing refit or chosen. A second look at held-out, after X22's result (D-66).
+
+| Run | Windows | Within-window AUC | Flat-line | mTTA | Detection | False alarms (windows) | Per hour | AP | Per-window AUC | Pooled AUC |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **A `pfm-v5a-s1-e14` (served)** | **shifted** | **0.7851** | 0.5203 | 23.13 s | 0.150 | 0.063 | 11.5 | 0.4918 | 0.5123 | 0.5396 |
+| A | shifted, 30 s | 0.8071 | 0.3437 | 20.88 s | 0.126 | 0.047 | 12.2 | 0.5158 | 0.5346 | 0.5657 |
+| A | shifted, 60 s | 0.7631 | 0.6969 | 24.75 s | 0.175 | 0.080 | 11.1 | 0.4772 | 0.4886 | 0.5226 |
+| A | unshifted, same videos | 0.5736 | 0.5203 | 19.98 s | 0.209 | 0.063 | 11.5 | 0.5480 | 0.5892 | 0.5598 |
+| A | unshifted, same videos, 30 s | 0.4426 | 0.3437 | 14.66 s | 0.184 | 0.047 | 12.2 | 0.5677 | 0.5979 | 0.5774 |
+| A | unshifted, same videos, 60 s | 0.7045 | 0.6969 | 24.20 s | 0.233 | 0.080 | 11.1 | 0.5396 | 0.5813 | 0.5492 |
+| B `pfm-v5b-s1-e14` (reference only, **not chosen by the rule**) | shifted | 0.7361 | 0.3891 | 22.55 s | 0.150 | 0.067 | 12.2 | 0.4985 | 0.5267 | 0.5380 |
+| B | shifted, 30 s | 0.6933 | 0.3613 | 20.42 s | 0.126 | 0.060 | 10.5 | 0.5089 | 0.5281 | 0.5641 |
+| B | shifted, 60 s | 0.7789 | 0.4169 | 24.09 s | 0.175 | 0.073 | 13.2 | 0.4924 | 0.5237 | 0.5216 |
+| B | unshifted, same videos | 0.5385 | 0.3891 | 15.79 s | 0.223 | 0.067 | 12.2 | 0.5718 | 0.6227 | 0.5662 |
+
+Windows kept by the within-window AUC: 142 of 206 (64 lack a `close` or a `far` second; 71 per length); by the
+flat-line check 262 of 300 normal windows.
+
+- **SM-2 passes on the shifted windows: 0.7851 ≥ 0.70** (unshifted 0.5736, kept beside it). The unshifted AUC on
+  the same 103 videos is 0.5736 too: the 37 videos left out had no window with both ranges, so the whole change is
+  the shift. Measured where training put the seconds, the model rises toward the event
+- **The 60 s windows still drift:** their normal windows climb as well (flat-line 0.6969, over D-65's 0.60), so part
+  of the 60 s windows' 0.7631 is time, not the coming event. The 30 s windows rise (0.8071) while their normal
+  windows fall (0.3437). B, not chosen, is flatter on normal footage (0.39; 60 s 0.42) at 0.7361
+- **It ranks inside a window, not between windows:** per-window AUC 0.5123, AP 0.4918, 31 of 206 event windows
+  warned at `θ`. The model tells when a crime is nearer in the same footage, but its peak hardly tells a crime
+  window from a normal one
+- `Δt` is still not learned (12.36 s against 11.95 s for always the mean)
+
+**Not covered:** CCD (unchanged, SM-3 not touched); the other seeds; B is reference only and changes nothing.

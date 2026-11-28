@@ -69,7 +69,7 @@ marked **Deviation**. Measurements themselves are in `results.md`.
 | D-63 | **Revision:** SM-2 becomes "an event is coming": held-out UCF-Crime ROC-AUC ≥ 0.70, with false alarms per hour and lead time reported beside it; Phase A's "the true event in the top 3" is still reported for models with classes | 2026-11-27 | Agreed (written before the measurement) |
 | D-64 | **Revision:** SM-2 measured within each window (a sample near the event against an earlier one of the same window, held-out UCF-Crime ≥ 0.70); the pooled AUC still reported. **Amended before training:** only the event-only model is trained again, each seed's epoch chosen by UCF-Crime's validation within-window AUC; the served model is its best seed by that measure if its flat-line check is ≤ 0.60; v2 is measured for reference only | 2026-11-27 | Agreed (written before any of these numbers was computed; amended before training) |
 | D-65 | **Deviation** (Algorithm 4) and **revision** (SM-2's range): the forecaster trained to forecast: Fix 1 distance-weighted class error, Fix 2 ranking inside the window, versions A, B, C; eight measures; the epoch by UCF-Crime's within-window AUC among epochs passing the flat-line check (≤ 0.60); SM-2 `close` τ [8, 13) s | 2026-11-28 | Agreed (written before training); SM-3 pass, SM-2 fail (OMNI-X22) |
-| D-66 | **Revision** (how SM-2 is measured): held-out UCF-Crime's event windows shifted 8 s earlier, as training's (D-49's rule); A stays served, B for reference only; the unshifted 0.5736 kept beside | 2026-11-28 | Agreed (written before the run) |
+| D-66 | **Revision** (how SM-2 is measured): held-out UCF-Crime's event windows shifted 8 s earlier, as training's (D-49's rule); A stays served, B for reference only; the unshifted 0.5736 kept beside | 2026-11-28 | Agreed (written before the run); SM-2 0.7851, pass (OMNI-X23) |
 
 ---
 
@@ -1806,3 +1806,10 @@ window's start up to that second, so SM-2 would be the same number.
   measures, per length (30 s / 60 s), the windows each range keeps and skips, and, for reading only, the unshifted
   within-window AUC on the same videos (so a change from the shift is not mistaken for one from the fewer videos)
 - **SM-3 is not touched**
+
+**Result (OMNI-X23, 2026-11-28):** the 222 missing grid points encoded (31 videos, none failed). Served model
+`pfm-v5a-s1-e14`: **SM-2 0.7851 on the shifted windows, pass** (30 s 0.8071, 60 s 0.7631); unshifted 0.5736 kept
+beside it, the same on the 103 videos measured, so the change is the shift alone. The 60 s normal windows still
+climb (flat-line 0.6969, over 0.60), so part of the 60 s rise is time. B for reference only, not chosen: 0.7361,
+flatter (0.3891). Per-window AUC 0.5123: the model ranks seconds inside a window, not windows. Nothing above
+changes, and the served model is unchanged.
