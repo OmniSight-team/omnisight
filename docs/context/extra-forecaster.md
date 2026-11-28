@@ -228,3 +228,54 @@ learning crashes helps forecast crimes. Each version has 3 seeds, and each seed'
 ### Result
 
 Ready for Colab: `notebooks/pfm_train_forecast_gpu.ipynb`, after this is pushed. Next: OMNI-X22 once A and B end.
+
+---
+
+## OMNI-X22 · The choice, held-out once, the record
+
+### Why this ticket exists
+
+D-65 fixed how the served model is chosen and how it is judged before any of X21's numbers existed. This ticket
+applies that rule to X21's nine seeds, measures the one chosen model on held-out once, and records SM-2 and SM-3.
+
+### What was done
+
+2026-11-28.
+- **X21's runs ended** (Colab, NVIDIA A100, commit `cf78a39`). Every seed of every version had a passing epoch;
+  the epochs that failed the flat-line check were B 3 of 141, A 16 of 117, C 2 of 111. GPU time per epoch: A about
+  13 s, B about 21 s, C about 12 s (the ranking batch's extra forward pass costs about 60%)
+- `scripts/pfm_choose.py` (new): reads `results/x21_v5{a,b,c}.json`, applies D-65's rule (the highest UCF-Crime
+  validation within-window AUC among A's and B's seeds; on a tie the lower seed, then A), prints the validation
+  table and the two comparisons, and writes `results/x22_choice.json`. With `--register` it copies the seed's
+  `best.pt` (after checking it holds the chosen epoch) to `models/pfm/runs/pfm-v5a-s1-e14/model.pt`, writes its
+  `run.json` (`θ_d` from the history, the rule `1 - p(Normal) >= theta`) and makes it `model_runs.json`'s chosen
+  run, in place of `pfm-joint-v2-mf-s2-e55`. Nothing is refit
+- **The served model: `pfm-v5a-s1-e14`** (version A, seed 1, epoch 14): UCF-Crime within-window AUC 0.8172,
+  flat-line 0.568; `θ` CCD 0.0581, UCF-Crime 0.6281. Among A's seeds it is the weakest on the other UCF-Crime
+  measures (detection 0.167, AP 0.450, 24.1 false alarms per hour), and its flat-line is close to the 0.60 limit,
+  as are all of A's (0.568-0.588)
+- **What Fix 2 adds:** A 0.7911 (spread 0.0522), B 0.7419 (spread 0.0331): B is 0.049 lower, less than the larger
+  spread, so **no difference is claimed**. Beside it, not a claim: B's flat-line is lower on every seed
+  (0.445-0.482 against 0.568-0.588)
+- **Does sharing help:** B 0.7419, C 0.7521 (spread 0.0839): +0.010, **not claimed**; C is not clearly better, so
+  no follow-up ticket for separate models
+- `notebooks/pfm_heldout_gpu.ipynb`: a cell 5 that prints D-65's eight measures (and held-out UCF-Crime's τ [0, 8) s
+  within-window AUC) for the model and the control, and SM-2's and SM-3's pass or fail. Cell 3's first line and the
+  figure's CCD lead times keep D-59's warning rule; on a D-65 model cell 5 holds the numbers (K-37)
+- K-37: OMNI-911's alert rule `max(p) ≥ θ_d` does not fit D-65's `θ_d`
+
+### Verification performed
+
+- Four new tests (`test_pfm_choose.py`): the highest seed of A or B is served, never C; a tie goes to the lower seed,
+  then to A; a failed seed is skipped, and none passing serves nothing; a difference is claimed only above the
+  larger spread. 44 tests in the four PFM test files pass
+- The chosen `best.pt` reloaded **on the laptop's CPU** and run on the whole validation split of both datasets:
+  `θ`, within-window AUC, flat-line, mTTA, detection, false alarms per hour and AP all equal the Colab history
+  (to 1e-4)
+- Cell 5 run on **validation** (not held-out) with the registered run: it runs, and gives the history's numbers.
+  One CCD normal window sits exactly at `θ`, and the CPU's rounding tips it (false alarms 0.102 against 0.100)
+- `pfm_runs.py list` shows `pfm-v5a-s1-e14` as the chosen run
+
+### Not verified
+
+- Held-out (Ahmad, on Colab): `notebooks/pfm_heldout_gpu.ipynb`, `RUN_ID` empty, after this is pushed

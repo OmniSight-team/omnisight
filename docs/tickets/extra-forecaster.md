@@ -129,14 +129,14 @@ epochs, patience 30; 3 seeds (0, 1, 2); `θ_d` by the 10% rule on validation nor
 
 ## OMNI-X22 · The choice, held-out once, the record · Sat evening (C's comparison when it ends)
 
-- [ ] **The served model:** the seed of **A or B** with the highest UCF-Crime validation within-window AUC (both
+- [x] **The served model:** the seed of **A or B** with the highest UCF-Crime validation within-window AUC (both
       datasets need a head, so C is not served). If no epoch of any seed passed the flat-line check, nothing new is
       served (the product keeps its current model) and the failure is recorded
-- [ ] **What Fix 2 adds:** A's and B's mean and seed spread of the within-window AUC; claimed only if the difference
+- [x] **What Fix 2 adds:** A's and B's mean and seed spread of the within-window AUC; claimed only if the difference
       is larger than the larger spread
-- [ ] **Does sharing help:** B's and C's UCF-Crime numbers the same way. If C is clearly better, a follow-up ticket
+- [x] **Does sharing help:** B's and C's UCF-Crime numbers the same way. If C is clearly better, a follow-up ticket
       trains separate models per dataset
-- [ ] **Validation table:** every seed of every version, both datasets, all eight measures, and the windows kept
+- [x] **Validation table:** every seed of every version, both datasets, all eight measures, and the windows kept
 - [ ] **Held-out once**, only for the served model, all eight measures (plus the τ [0, 8) s within-window AUC):
   - **SM-2:** within-window AUC **≥ 0.70** on held-out UCF-Crime
   - **SM-3:** lead time **≥ 1.80 s** on held-out CCD
